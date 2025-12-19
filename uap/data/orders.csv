@@ -1,0 +1,4 @@
+id,customerName,phone,serviceType,weightKg,pricePerKg,totalPrice,status,orderDate,notes
+ORD-002,Budi,0813-7777-555,Dry Clean,2.0,15000.0,30000.0,IN_PROGRESS,2025-12-18,
+ORD-003,fff,098,Wash & Fold,5.0,6.0,30.0,PENDING,2002-02-18,kur
+ORD-004,wq,9800009765455332,Wash & Fold,5.0,1000.0,5000.0,PENDING,2025-12-19,55
