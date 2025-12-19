@@ -10,9 +10,8 @@ public class Menu extends JFrame {
     public Menu(Main app) {
         this.app = app;
         setTitle("Menu Navigasi");
-        setSize(560, 360);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
 
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(new Color(245, 247, 250));

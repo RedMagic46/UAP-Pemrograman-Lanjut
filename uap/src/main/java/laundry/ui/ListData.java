@@ -16,13 +16,11 @@ public class ListData extends JFrame {
     public ListData(Main app) {
         this.app = app;
         setTitle("List Data Pesanan");
-        setSize(820, 480);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
 
         JPanel root = new JPanel(new BorderLayout());
 
-        // Header + search
         JPanel header = new JPanel(new BorderLayout());
         header.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
         JLabel h = new JLabel("List Pesanan");
@@ -39,7 +37,6 @@ public class ListData extends JFrame {
 
         root.add(header, BorderLayout.NORTH);
 
-        // Table
         String[] cols = {"Nama", "Layanan", "Berat (kg)", "Tanggal", "Status"};
         model = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
@@ -52,7 +49,6 @@ public class ListData extends JFrame {
         refreshTable();
         root.add(new JScrollPane(table), BorderLayout.CENTER);
 
-        // Actions
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 10));
         JButton editBtn = new JButton("Edit");
         JButton delBtn = new JButton("Hapus");

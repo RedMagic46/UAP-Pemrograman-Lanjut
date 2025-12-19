@@ -16,9 +16,8 @@ public class ReportF extends JFrame {
     public ReportF(Main app) {
         this.app = app;
         setTitle("Laporan & Ringkasan");
-        setSize(700, 460);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
 
         JPanel root = new JPanel(new BorderLayout());
         JLabel title = new JLabel("Laporan & Ringkasan", SwingConstants.CENTER);
