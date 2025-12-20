@@ -54,38 +54,20 @@ public class LoginFrame extends JFrame {
             protected void paintComponent(Graphics g) {
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(new Color(0, 0, 0, 100));
                 g2d.setFont(getFont());
                 FontMetrics fm = g2d.getFontMetrics();
                 String text = getText();
-                int x = (getWidth() - fm.stringWidth(text)) / 2;
-                int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
-                
-                for (int i = 4; i >= 1; i--) {
-                    g2d.setColor(new Color(0, 0, 0, 25 * i));
-                    g2d.drawString(text, x + i, y + i);
-                }
-                
-                g2d.setColor(new Color(0, 0, 0, 80));
-                g2d.drawString(text, x + 2, y + 2);
-                
-                GradientPaint gradient = new GradientPaint(
-                    x, y - fm.getAscent(),
-                    Color.WHITE,
-                    x, y + fm.getDescent(),
-                    new Color(140, 140, 140)
-                );
-                
-                g2d.setPaint(gradient);
+                int x = (getWidth() - fm.stringWidth(text)) / 2 + 1;
+                int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2 + 1;
                 g2d.drawString(text, x, y);
-                
-                g2d.setColor(new Color(255, 255, 255, 180));
+                g2d.setColor(getForeground());
                 g2d.drawString(text, x - 1, y - 1);
-                
                 g2d.dispose();
             }
         };
         title.setFont(new Font("SansSerif", Font.BOLD, 24));
+        title.setForeground(Color.WHITE);
         title.setPreferredSize(new Dimension(400, 40));
         overlay.add(title, gbc);
 
