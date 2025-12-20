@@ -288,7 +288,7 @@ public class LoginFrame extends JFrame {
         g2d.setColor(new Color(255, 255, 255, 100));
         g2d.setFont(new Font("SansSerif", Font.BOLD, 24));
         FontMetrics fm = g2d.getFontMetrics();
-        String text = "Placeholder Background - Ganti dengan gambar Anda";
+        String text = "Placeholder Background";
         int x = (800 - fm.stringWidth(text)) / 2;
         int y = 300;
         g2d.drawString(text, x, y);
