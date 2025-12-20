@@ -117,6 +117,7 @@ public class LoginFrame extends JFrame {
         userField.setOpaque(false);
         userField.setBackground(Color.WHITE);
         userField.setPreferredSize(new Dimension(200, 35));
+        userField.addActionListener(e -> passField.requestFocus());
         form.add(userField, formGbc);
 
         formGbc.gridx = 0;
@@ -146,6 +147,7 @@ public class LoginFrame extends JFrame {
         passField.setOpaque(false);
         passField.setBackground(Color.WHITE);
         passField.setPreferredSize(new Dimension(200, 35));
+        passField.addActionListener(e -> doLogin());
         form.add(passField, formGbc);
 
         formGbc.gridx = 0;
