@@ -43,8 +43,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <!-- Entry point aplikasi -->
-                            <mainClass>laundry.App</mainClass>
+                            <mainClass>laundry.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
