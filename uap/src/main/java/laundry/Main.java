@@ -4,6 +4,7 @@ import laundry.model.Laundry;
 import laundry.repo.Csv;
 import laundry.service.LaundryService;
 import laundry.exception.Data;
+import laundry.ui.LoginFrame;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -36,5 +37,12 @@ public class Main {
                     "Gagal menyimpan data: " + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            Main appContext = new Main();
+            new LoginFrame(appContext).setVisible(true);
+        });
     }
 }

@@ -14,7 +14,11 @@ public class LaundryService {
         if (order.getWeightKg() <= 0)
             throw new Validation ("Berat cucian harus lebih dari 0");
         if (order.getOrderDate() == null)
-            throw new Validation ("Tanggal tidak boleh kosong");
+            throw new Validation ("Tanggal order tidak boleh kosong");
+        if (order.getPickupDate() == null)
+            throw new Validation ("Tanggal pickup tidak boleh kosong");
+        if (order.getPickupDate().isBefore(order.getOrderDate()))
+            throw new Validation ("Tanggal pickup tidak boleh sebelum tanggal order");
     }
 
     public double calculatePrice(Laundry order) {

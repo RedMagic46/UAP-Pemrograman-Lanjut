@@ -199,18 +199,20 @@ public class LoginFrame extends JFrame {
             protected void paintComponent(Graphics g) {
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bgColor;
                 if (getModel().isPressed()) {
-                    g2d.setColor(getBackground().darker());
+                    bgColor = new Color(244, 67, 54).darker();
                 } else if (getModel().isRollover()) {
-                    g2d.setColor(getBackground().brighter());
+                    bgColor = new Color(244, 67, 54).brighter();
                 } else {
-                    g2d.setColor(getBackground());
+                    bgColor = new Color(244, 67, 54);
                 }
-                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+                g2d.setColor(bgColor);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
                 super.paintComponent(g);
+                g2d.dispose();
             }
         };
-        exitBtn.setBackground(new Color(244, 67, 54));
         exitBtn.setForeground(Color.WHITE);
         exitBtn.setBorderPainted(false);
         exitBtn.setFocusPainted(false);
@@ -223,18 +225,20 @@ public class LoginFrame extends JFrame {
             protected void paintComponent(Graphics g) {
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bgColor;
                 if (getModel().isPressed()) {
-                    g2d.setColor(getBackground().darker());
+                    bgColor = new Color(33, 150, 243).darker();
                 } else if (getModel().isRollover()) {
-                    g2d.setColor(getBackground().brighter());
+                    bgColor = new Color(33, 150, 243).brighter();
                 } else {
-                    g2d.setColor(getBackground());
+                    bgColor = new Color(33, 150, 243);
                 }
-                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+                g2d.setColor(bgColor);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
                 super.paintComponent(g);
+                g2d.dispose();
             }
         };
-        loginBtn.setBackground(new Color(33, 150, 243));
         loginBtn.setForeground(Color.WHITE);
         loginBtn.setBorderPainted(false);
         loginBtn.setFocusPainted(false);
@@ -456,11 +460,9 @@ public class LoginFrame extends JFrame {
         
         JButton cancelBtn = new JButton("Batal") {
             @Override
-            public void paint(Graphics g) {
+            protected void paintComponent(Graphics g) {
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-                
                 Color bgColor;
                 if (getModel().isPressed()) {
                     bgColor = new Color(158, 158, 158).darker();
@@ -470,34 +472,23 @@ public class LoginFrame extends JFrame {
                     bgColor = new Color(158, 158, 158);
                 }
                 g2d.setColor(bgColor);
-                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
-                
-                FontMetrics fm = g2d.getFontMetrics(getFont());
-                String text = getText();
-                int x = (getWidth() - fm.stringWidth(text)) / 2;
-                int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
-                
-                g2d.setColor(Color.WHITE);
-                g2d.setFont(getFont());
-                g2d.drawString(text, x, y);
-                
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
                 g2d.dispose();
             }
         };
+        cancelBtn.setForeground(Color.WHITE);
         cancelBtn.setBorderPainted(false);
         cancelBtn.setFocusPainted(false);
         cancelBtn.setContentAreaFilled(false);
-        cancelBtn.setOpaque(false);
         cancelBtn.setPreferredSize(new Dimension(100, 40));
         cancelBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
         
         JButton registerBtn = new JButton("Daftar") {
             @Override
-            public void paint(Graphics g) {
+            protected void paintComponent(Graphics g) {
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-                
                 Color bgColor;
                 if (getModel().isPressed()) {
                     bgColor = new Color(33, 150, 243).darker();
@@ -507,24 +498,15 @@ public class LoginFrame extends JFrame {
                     bgColor = new Color(33, 150, 243);
                 }
                 g2d.setColor(bgColor);
-                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
-                
-                FontMetrics fm = g2d.getFontMetrics(getFont());
-                String text = getText();
-                int x = (getWidth() - fm.stringWidth(text)) / 2;
-                int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
-                
-                g2d.setColor(Color.WHITE);
-                g2d.setFont(getFont());
-                g2d.drawString(text, x, y);
-                
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
                 g2d.dispose();
             }
         };
+        registerBtn.setForeground(Color.WHITE);
         registerBtn.setBorderPainted(false);
         registerBtn.setFocusPainted(false);
         registerBtn.setContentAreaFilled(false);
-        registerBtn.setOpaque(false);
         registerBtn.setPreferredSize(new Dimension(100, 40));
         registerBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
         
@@ -553,7 +535,7 @@ public class LoginFrame extends JFrame {
 
                 User newUser = new User(username, password);
                 userRepo.addUser(newUser);
-                JOptionPane.showMessageDialog(registerDialog, "Akun berhasil didaftarkan!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+                showSuccessDialog(registerDialog, "Akun berhasil didaftarkan!");
                 registerDialog.dispose();
             } catch (Data ex) {
                 JOptionPane.showMessageDialog(registerDialog, "Gagal menyimpan: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -567,5 +549,57 @@ public class LoginFrame extends JFrame {
         rootPanel.add(dialogPanel, BorderLayout.CENTER);
         registerDialog.add(rootPanel);
         registerDialog.setVisible(true);
+    }
+
+    private void showSuccessDialog(Component parent, String message) {
+        JDialog successDialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(parent), "Sukses", true);
+        successDialog.setSize(350, 150);
+        successDialog.setLocationRelativeTo(parent);
+
+        JPanel rootPanel = new JPanel(new BorderLayout());
+        rootPanel.setBackground(Color.WHITE);
+        rootPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        JLabel messageLabel = new JLabel(message);
+        messageLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        rootPanel.add(messageLabel, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        buttonPanel.setBackground(Color.WHITE);
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
+
+        JButton okBtn = new JButton("OK") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bgColor;
+                if (getModel().isPressed()) {
+                    bgColor = new Color(33, 150, 243).darker();
+                } else if (getModel().isRollover()) {
+                    bgColor = new Color(33, 150, 243).brighter();
+                } else {
+                    bgColor = new Color(33, 150, 243);
+                }
+                g2d.setColor(bgColor);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.dispose();
+            }
+        };
+        okBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
+        okBtn.setForeground(Color.WHITE);
+        okBtn.setBorderPainted(false);
+        okBtn.setFocusPainted(false);
+        okBtn.setContentAreaFilled(false);
+        okBtn.setPreferredSize(new Dimension(100, 35));
+        okBtn.addActionListener(e -> successDialog.dispose());
+
+        buttonPanel.add(okBtn);
+        rootPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        successDialog.add(rootPanel);
+        successDialog.setVisible(true);
     }
 }

@@ -1,4 +1,9 @@
 username,password
 admin,admin
 halo,hai
+<<<<<<< HEAD
 kilo,12321
+=======
+test,test1
+tes,halo
+>>>>>>> 314b92823c99df38f0bcbeb97796fa6e7ed91da0
