@@ -230,7 +230,7 @@ uap/
 
 ---
 
-## 👨‍💻 Developer {#developer}
+## 👨‍💻 Developer
 
 Proyek ini dikembangkan oleh:
 - **Naufal Muammar** (202410370110027)
