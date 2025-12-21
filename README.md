@@ -18,7 +18,7 @@ Aplikasi manajemen laundry modern berbasis **Java Swing** dengan antarmuka pengg
 - [Cara Penggunaan](#-cara-penggunaan)
 - [Struktur Proyek](#-struktur-proyek)
 - [Fitur Detail](#-fitur-detail)
-- [Anggota Kelompok](#-developer)
+- [👨‍💻 Developer](#developer)
 
 ---
 
@@ -231,7 +231,7 @@ uap/
 
 ---
 
-## 👨‍💻 Developer
+## 👨‍💻 Developer {#developer}
 
 Proyek ini dikembangkan oleh:
 - **Naufal Muammar** (202410370110027)
@@ -239,7 +239,6 @@ Proyek ini dikembangkan oleh:
 
 Dibuat untuk Ujian Akhir Praktikum (UAP) Pemrograman Lanjut.
 ---
-
 
 ## 🙏 Terima Kasih
 
