@@ -7,8 +7,15 @@
     <list default="true" id="8f30a4ee-a769-4aac-a3c0-2f2d049b8c34" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/laundry/Frame.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/laundry/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/laundry/Main.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/laundry/service/LaundryService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/laundry/service/LaundryService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/laundry/ui/InputF.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/laundry/ui/ListData.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/laundry/ui/LoginFrame.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/laundry/ui/LoginFrame.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/laundry/ui/Menu.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/laundry/ui/Menu.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/laundry/ui/ReportF.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/data/pesanan.csv" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/data/pesanan.csv" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/data/users.csv" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/data/users.csv" afterDir="false" />
     </list>
@@ -107,6 +114,7 @@
       <workItem from="1766227274701" duration="56000" />
       <workItem from="1766243737940" duration="739000" />
       <workItem from="1766247141042" duration="372000" />
+      <workItem from="1766304538199" duration="558000" />
     </task>
     <servers />
   </component>

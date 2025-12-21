@@ -191,6 +191,10 @@ public class Menu extends JFrame {
             refreshListTable(listDataModel);
         } else if (menuId.equals("USERS")) {
             refreshUsersTable();
+        } else if (menuId.equals("DASHBOARD") || menuId.equals("Overview")) {
+            refreshDashboardPanel();
+        } else if (menuId.equals("REPORT")) {
+            refreshReportPanel();
         }
         cardLayout.show(contentArea, menuId);
     }
@@ -208,11 +212,13 @@ public class Menu extends JFrame {
         contentArea = new JPanel(cardLayout);
         contentArea.setBackground(new Color(245, 247, 250));
 
-        contentArea.add(createDashboardPanel(), "DASHBOARD");
+        dashboardPanel = createDashboardPanel();
+        contentArea.add(dashboardPanel, "DASHBOARD");
         contentArea.add(createListDataPanel(), "LIST");
         contentArea.add(createInputDataPanel(), "INPUT");
         contentArea.add(createUsersPanel(), "USERS");
-        contentArea.add(createReportPanel(), "REPORT");
+        reportPanel = createReportPanel();
+        contentArea.add(reportPanel, "REPORT");
     }
 
     private JPanel createDashboardPanel() {
@@ -336,16 +342,17 @@ public class Menu extends JFrame {
             }
         };
 
-        List<Laundry> orders = app.getOrders();
+        List<Laundry> orders = new java.util.ArrayList<>(app.getOrders());
         orders.sort(Comparator.comparing(Laundry::getOrderDate).reversed());
         List<Laundry> recentOrders = orders.subList(0, Math.min(10, orders.size()));
 
         NumberFormat currencyFormat = NumberFormat.getNumberInstance();
         currencyFormat.setMaximumFractionDigits(0);
 
-        for (int i = 0; i < recentOrders.size(); i++) {
-            Laundry order = recentOrders.get(i);
-            String orderId = "ORD-" + String.format("%03d", i + 1);
+        List<Laundry> allOrders = app.getOrders();
+        for (Laundry order : recentOrders) {
+            int actualIndex = allOrders.indexOf(order);
+            String orderId = "ORD-" + String.format("%03d", actualIndex + 1);
             String serviceType = order.getServiceType().name();
             String status = order.getStatus().name();
             String pickupDate = order.getOrderDate().toString();
@@ -661,6 +668,7 @@ public class Menu extends JFrame {
             selected.setStatus(OrderStatus.SELESAI);
             app.persist();
             refreshListTable(listDataModel);
+            refreshOverviewAndReport();
             JOptionPane.showMessageDialog(this, "Pesanan berhasil ditandai selesai", "Sukses", JOptionPane.INFORMATION_MESSAGE);
         });
 
@@ -681,6 +689,8 @@ public class Menu extends JFrame {
             app.getOrders().remove(modelIndex);
             app.persist();
             refreshListTable(listDataModel);
+            refreshOverviewAndReport();
+            JOptionPane.showMessageDialog(this, "Pesanan berhasil dihapus", "Sukses", JOptionPane.INFORMATION_MESSAGE);
         });
 
         actions.add(editBtn);
@@ -790,6 +800,7 @@ public class Menu extends JFrame {
                     editingOrder.setOrderDate(order.getOrderDate());
                 }
                 app.persist();
+                refreshOverviewAndReport();
                 JOptionPane.showMessageDialog(this, "Pesanan tersimpan!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
                 editingOrder = null;
                 clearInputForm();
@@ -849,6 +860,10 @@ public class Menu extends JFrame {
 
     private DefaultTableModel usersModel;
     private UserCsv usersRepo;
+    private LocalDate reportStartDate = null;
+    private LocalDate reportEndDate = null;
+    private JPanel reportPanel;
+    private JPanel dashboardPanel;
 
     private JPanel createUsersPanel() {
         JPanel root = new JPanel(new BorderLayout());
@@ -1407,6 +1422,7 @@ public class Menu extends JFrame {
                 order.setOrderDate(date);
                 app.persist();
                 refreshListTable(listDataModel);
+                refreshOverviewAndReport();
                 editDialog.dispose();
                 JOptionPane.showMessageDialog(this, "Pesanan berhasil diupdate", "Sukses", JOptionPane.INFORMATION_MESSAGE);
             } catch (Validation ex) {
@@ -1425,8 +1441,8 @@ public class Menu extends JFrame {
     }
 
     private JPanel createReportPanel() {
-        JPanel root = new JPanel(new BorderLayout());
-        root.setBackground(new Color(245, 247, 250));
+        reportPanel = new JPanel(new BorderLayout());
+        reportPanel.setBackground(new Color(245, 247, 250));
 
         JPanel header = new JPanel(new BorderLayout());
         header.setBackground(Color.WHITE);
@@ -1435,50 +1451,105 @@ public class Menu extends JFrame {
             BorderFactory.createEmptyBorder(20, 30, 20, 30)
         ));
 
-        JLabel titleLabel = new JLabel("Laporan & Ringkasan");
+        JLabel titleLabel = new JLabel("Reports Overview");
         titleLabel.setFont(new Font("SansSerif", Font.BOLD, 24));
         titleLabel.setForeground(new Color(30, 58, 95));
         header.add(titleLabel, BorderLayout.WEST);
 
-        root.add(header, BorderLayout.NORTH);
+        JPanel headerButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        headerButtons.setOpaque(false);
 
-        JPanel cards = new JPanel(new GridLayout(1, 4, 12, 12));
-        cards.setBackground(new Color(245, 247, 250));
-        cards.setBorder(BorderFactory.createEmptyBorder(30, 30, 20, 30));
+        JButton resetBtn = new JButton("Reset") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bgColor;
+                if (getModel().isPressed()) {
+                    bgColor = new Color(158, 158, 158).darker();
+                } else if (getModel().isRollover()) {
+                    bgColor = new Color(158, 158, 158).brighter();
+                } else {
+                    bgColor = new Color(158, 158, 158);
+                }
+                g2d.setColor(bgColor);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.dispose();
+            }
+        };
+        resetBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
+        resetBtn.setForeground(Color.WHITE);
+        resetBtn.setBorderPainted(false);
+        resetBtn.setFocusPainted(false);
+        resetBtn.setContentAreaFilled(false);
+        resetBtn.setPreferredSize(new Dimension(100, 35));
+        resetBtn.addActionListener(e -> {
+            reportStartDate = null;
+            reportEndDate = null;
+            refreshReportPanel();
+        });
 
-        int total = app.getOrders().size();
-        long selesai = app.getOrders().stream().filter(o -> o.getStatus() == OrderStatus.SELESAI).count();
-        long pending = app.getOrders().stream().filter(o -> o.getStatus() == OrderStatus.PENDING).count();
-        double totalKg = app.getOrders().stream().mapToDouble(Laundry::getWeightKg).sum();
-        double revenue = app.getOrders().stream().mapToDouble(o -> app.getService().calculatePrice(o)).sum();
+        JButton dateRangeBtn = new JButton("Date Range") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bgColor;
+                if (getModel().isPressed()) {
+                    bgColor = new Color(33, 150, 243).darker();
+                } else if (getModel().isRollover()) {
+                    bgColor = new Color(33, 150, 243).brighter();
+                } else {
+                    bgColor = new Color(33, 150, 243);
+                }
+                g2d.setColor(bgColor);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.dispose();
+            }
+        };
+        dateRangeBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
+        dateRangeBtn.setForeground(Color.WHITE);
+        dateRangeBtn.setBorderPainted(false);
+        dateRangeBtn.setFocusPainted(false);
+        dateRangeBtn.setContentAreaFilled(false);
+        dateRangeBtn.setPreferredSize(new Dimension(120, 35));
+        dateRangeBtn.addActionListener(e -> showDateRangeDialog());
 
-        cards.add(createReportStatCard("Total Pesanan", String.valueOf(total), new Color(33, 150, 243)));
-        cards.add(createReportStatCard("Selesai", String.valueOf(selesai), new Color(76, 175, 80)));
-        cards.add(createReportStatCard("Pending", String.valueOf(pending), new Color(255, 193, 7)));
-        cards.add(createReportStatCard("Total Berat (kg)", String.format("%.2f", totalKg), new Color(156, 39, 176)));
+        headerButtons.add(resetBtn);
+        headerButtons.add(dateRangeBtn);
+        header.add(headerButtons, BorderLayout.EAST);
 
-        JTextArea detail = new JTextArea();
-        detail.setEditable(false);
-        detail.setFont(new Font("Monospaced", Font.PLAIN, 13));
-        detail.setBackground(Color.WHITE);
-        detail.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        Map<ServiceType, Long> byService = app.getOrders().stream()
-            .collect(Collectors.groupingBy(Laundry::getServiceType, Collectors.counting()));
-        StringBuilder sb = new StringBuilder();
-        sb.append("Jumlah pesanan per layanan:\n");
-        byService.forEach((svc, cnt) -> sb.append(String.format("- %s: %d%n", svc.name(), cnt)));
-        sb.append("\nPerkiraan Omzet: Rp ").append((long) revenue);
-        detail.setText(sb.toString());
+        reportPanel.add(header, BorderLayout.NORTH);
 
-        JPanel bottom = new JPanel(new BorderLayout(8, 8));
-        bottom.setBackground(new Color(245, 247, 250));
-        bottom.setBorder(BorderFactory.createEmptyBorder(0, 30, 30, 30));
-        bottom.add(new JScrollPane(detail), BorderLayout.CENTER);
+        LocalDate endDate = reportEndDate != null ? reportEndDate : LocalDate.now();
+        LocalDate startDate = reportStartDate != null ? reportStartDate : endDate.minusDays(6);
 
-        root.add(cards, BorderLayout.CENTER);
-        root.add(bottom, BorderLayout.SOUTH);
+        JPanel chartContainer = new JPanel(new BorderLayout());
+        chartContainer.setBackground(new Color(245, 247, 250));
+        chartContainer.setBorder(BorderFactory.createEmptyBorder(30, 30, 20, 30));
+        
+        JLabel chartTitle = new JLabel("Daily Revenue");
+        chartTitle.setFont(new Font("SansSerif", Font.BOLD, 18));
+        chartTitle.setForeground(new Color(30, 58, 95));
+        chartTitle.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
+        chartContainer.add(chartTitle, BorderLayout.NORTH);
+        chartContainer.add(createDailyRevenueChart(startDate, endDate), BorderLayout.CENTER);
 
-        return root;
+        JPanel transactionsContainer = new JPanel(new BorderLayout());
+        transactionsContainer.setBackground(new Color(245, 247, 250));
+        transactionsContainer.setBorder(BorderFactory.createEmptyBorder(0, 30, 30, 30));
+        transactionsContainer.add(createTransactionsTable(startDate, endDate), BorderLayout.CENTER);
+
+        JPanel centerPanel = new JPanel(new BorderLayout());
+        centerPanel.setBackground(new Color(245, 247, 250));
+        centerPanel.add(chartContainer, BorderLayout.NORTH);
+        centerPanel.add(transactionsContainer, BorderLayout.CENTER);
+
+        reportPanel.add(centerPanel, BorderLayout.CENTER);
+
+        return reportPanel;
     }
 
     private JPanel createReportStatCard(String title, String value, Color color) {
@@ -1494,5 +1565,410 @@ public class Menu extends JFrame {
         card.add(t, BorderLayout.NORTH);
         card.add(v, BorderLayout.CENTER);
         return card;
+    }
+
+    private Map<LocalDate, Double> calculateDailyRevenue(LocalDate startDate, LocalDate endDate) {
+        Map<LocalDate, Double> dailyRevenue = new java.util.HashMap<>();
+        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+            dailyRevenue.put(date, 0.0);
+        }
+        List<Laundry> filteredOrders = filterOrdersByDateRange(startDate, endDate);
+        for (Laundry order : filteredOrders) {
+            LocalDate orderDate = order.getOrderDate();
+            double price = app.getService().calculatePrice(order);
+            dailyRevenue.put(orderDate, dailyRevenue.get(orderDate) + price);
+        }
+        return dailyRevenue;
+    }
+
+    private List<Laundry> filterOrdersByDateRange(LocalDate startDate, LocalDate endDate) {
+        if (startDate == null || endDate == null) {
+            return app.getOrders();
+        }
+        return app.getOrders().stream()
+            .filter(order -> {
+                LocalDate orderDate = order.getOrderDate();
+                return !orderDate.isBefore(startDate) && !orderDate.isAfter(endDate);
+            })
+            .collect(Collectors.toList());
+    }
+
+    private JPanel createDailyRevenueChart(LocalDate startDate, LocalDate endDate) {
+        Map<LocalDate, Double> dailyRevenue = calculateDailyRevenue(startDate, endDate);
+        List<LocalDate> dates = new java.util.ArrayList<>(dailyRevenue.keySet());
+        dates.sort(LocalDate::compareTo);
+        
+        double maxRevenueValue = dailyRevenue.values().stream().mapToDouble(Double::doubleValue).max().orElse(100.0);
+        if (maxRevenueValue == 0) maxRevenueValue = 100.0;
+        final double maxRevenue = maxRevenueValue;
+        double scale = maxRevenue / 100.0;
+        
+        JPanel chartPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                
+                int width = getWidth();
+                int height = getHeight();
+                int padding = 60;
+                int chartWidth = width - padding * 2;
+                int chartHeight = height - padding * 2;
+                int barWidth = chartWidth / dates.size();
+                int barSpacing = 5;
+                int actualBarWidth = barWidth - barSpacing * 2;
+                
+                g2d.setColor(Color.WHITE);
+                g2d.fillRect(0, 0, width, height);
+                
+                g2d.setColor(new Color(240, 240, 240));
+                for (int i = 0; i <= 5; i++) {
+                    int y = padding + (chartHeight * i / 5);
+                    g2d.drawLine(padding, y, width - padding, y);
+                }
+                
+                g2d.setColor(new Color(100, 100, 100));
+                g2d.setFont(new Font("SansSerif", Font.PLAIN, 11));
+                FontMetrics fm = g2d.getFontMetrics();
+                
+                for (int i = 0; i <= 5; i++) {
+                    double value = (maxRevenue * (5 - i) / 5.0);
+                    String label = String.format("%.0f", value);
+                    int y = padding + (chartHeight * i / 5);
+                    int labelWidth = fm.stringWidth(label);
+                    g2d.drawString(label, padding - labelWidth - 10, y + fm.getAscent() / 2);
+                }
+                
+                g2d.setColor(new Color(33, 150, 243));
+                for (int i = 0; i < dates.size(); i++) {
+                    LocalDate date = dates.get(i);
+                    double revenue = dailyRevenue.get(date);
+                    double normalizedRevenue = revenue / scale;
+                    int barHeight = (int) (chartHeight * normalizedRevenue / 100.0);
+                    int x = padding + i * barWidth + barSpacing;
+                    int y = padding + chartHeight - barHeight;
+                    
+                    g2d.fillRect(x, y, actualBarWidth, barHeight);
+                    
+                    String dateLabel = String.format("%02d/%02d", date.getDayOfMonth(), date.getMonthValue());
+                    int labelX = x + actualBarWidth / 2 - fm.stringWidth(dateLabel) / 2;
+                    int labelY = height - padding / 2;
+                    g2d.setColor(new Color(100, 100, 100));
+                    g2d.drawString(dateLabel, labelX, labelY);
+                    g2d.setColor(new Color(33, 150, 243));
+                }
+                
+                g2d.setColor(new Color(200, 200, 200));
+                g2d.setStroke(new BasicStroke(1.0f));
+                g2d.drawRect(padding, padding, chartWidth, chartHeight);
+                
+                g2d.dispose();
+            }
+        };
+        chartPanel.setPreferredSize(new Dimension(800, 300));
+        chartPanel.setBackground(Color.WHITE);
+        chartPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(230, 230, 230)),
+            BorderFactory.createEmptyBorder(20, 20, 20, 20)
+        ));
+        
+        return chartPanel;
+    }
+
+    private JPanel createTransactionsTable(LocalDate startDate, LocalDate endDate) {
+        JPanel root = new JPanel(new BorderLayout());
+        root.setBackground(new Color(245, 247, 250));
+        
+        JLabel titleLabel = new JLabel("Detailed Transactions Report");
+        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 20));
+        titleLabel.setForeground(new Color(30, 58, 95));
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
+        root.add(titleLabel, BorderLayout.NORTH);
+        
+        String[] columns = {"Order ID", "Service Type", "Status", "Pickup Date", "Total Amount"};
+        DefaultTableModel model = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        
+        List<Laundry> filteredOrders = filterOrdersByDateRange(startDate, endDate);
+        NumberFormat currencyFormat = NumberFormat.getNumberInstance();
+        currencyFormat.setMaximumFractionDigits(0);
+        
+        List<Laundry> allOrders = app.getOrders();
+        for (Laundry order : filteredOrders) {
+            int actualIndex = allOrders.indexOf(order);
+            String orderId = "ORD-" + String.format("%03d", actualIndex + 1);
+            String serviceType = order.getServiceType().name();
+            String status = order.getStatus().name();
+            String pickupDate = order.getOrderDate().toString();
+            String totalAmount = "Rp " + currencyFormat.format(app.getService().calculatePrice(order));
+            
+            model.addRow(new Object[]{orderId, serviceType, status, pickupDate, totalAmount});
+        }
+        
+        JTable table = new JTable(model);
+        table.setRowHeight(40);
+        table.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        table.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 14));
+        table.getTableHeader().setBackground(new Color(30, 58, 95));
+        table.getTableHeader().setForeground(Color.WHITE);
+        table.setGridColor(new Color(230, 230, 230));
+        table.setShowGrid(true);
+        table.setIntercellSpacing(new Dimension(0, 0));
+        
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+        for (int i = 0; i < table.getColumnCount(); i++) {
+            table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+        }
+        
+        DefaultTableCellRenderer statusRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                if (column == 2) {
+                    String status = value.toString();
+                    if (status.equals("PENDING")) {
+                        c.setBackground(new Color(255, 152, 0));
+                        c.setForeground(Color.WHITE);
+                    } else if (status.equals("SELESAI")) {
+                        c.setBackground(new Color(76, 175, 80));
+                        c.setForeground(Color.WHITE);
+                    } else {
+                        c.setBackground(new Color(33, 150, 243));
+                        c.setForeground(Color.WHITE);
+                    }
+                    ((JLabel) c).setHorizontalAlignment(SwingConstants.CENTER);
+                    ((JLabel) c).setOpaque(true);
+                } else {
+                    c.setBackground(isSelected ? table.getSelectionBackground() : Color.WHITE);
+                    c.setForeground(isSelected ? table.getSelectionForeground() : Color.BLACK);
+                }
+                return c;
+            }
+        };
+        table.getColumnModel().getColumn(2).setCellRenderer(statusRenderer);
+        
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(230, 230, 230)));
+        scrollPane.setBackground(Color.WHITE);
+        
+        root.add(scrollPane, BorderLayout.CENTER);
+        
+        return root;
+    }
+
+    private void showDateRangeDialog() {
+        JDialog rangeDialog = new JDialog(this, "Pilih Date Range", true);
+        rangeDialog.setSize(450, 300);
+        rangeDialog.setLocationRelativeTo(this);
+
+        JPanel rootPanel = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                GradientPaint gradient = new GradientPaint(
+                    0, 0, Color.WHITE,
+                    0, getHeight(), new Color(227, 242, 253)
+                );
+                g2d.setPaint(gradient);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+                g2d.dispose();
+            }
+        };
+        rootPanel.setOpaque(true);
+
+        JPanel dialogPanel = new JPanel(new GridBagLayout());
+        dialogPanel.setOpaque(false);
+        dialogPanel.setBorder(BorderFactory.createEmptyBorder(25, 30, 25, 30));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.anchor = GridBagConstraints.WEST;
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        JLabel titleLabel = new JLabel("Pilih Range Tanggal");
+        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 20));
+        titleLabel.setForeground(new Color(33, 150, 243));
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        dialogPanel.add(titleLabel, gbc);
+
+        gbc.gridwidth = 1;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0;
+        dialogPanel.add(new JLabel("Tanggal Mulai:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        JTextField startDateField = new JTextField(reportStartDate != null ? reportStartDate.toString() : LocalDate.now().minusDays(6).toString()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(getBackground());
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.setColor(new Color(200, 200, 200));
+                g2d.setStroke(new BasicStroke(1.0f));
+                g2d.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
+                g2d.dispose();
+            }
+        };
+        startDateField.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+        startDateField.setOpaque(false);
+        startDateField.setBackground(Color.WHITE);
+        startDateField.setPreferredSize(new Dimension(250, 35));
+        dialogPanel.add(startDateField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0;
+        dialogPanel.add(new JLabel("Tanggal Akhir:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        JTextField endDateField = new JTextField(reportEndDate != null ? reportEndDate.toString() : LocalDate.now().toString()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(getBackground());
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.setColor(new Color(200, 200, 200));
+                g2d.setStroke(new BasicStroke(1.0f));
+                g2d.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
+                g2d.dispose();
+            }
+        };
+        endDateField.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+        endDateField.setOpaque(false);
+        endDateField.setBackground(Color.WHITE);
+        endDateField.setPreferredSize(new Dimension(250, 35));
+        dialogPanel.add(endDateField, gbc);
+
+        rootPanel.add(dialogPanel, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        buttonPanel.setOpaque(false);
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
+        
+        JButton cancelBtn = new JButton("Batal") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bgColor;
+                if (getModel().isPressed()) {
+                    bgColor = new Color(158, 158, 158).darker();
+                } else if (getModel().isRollover()) {
+                    bgColor = new Color(158, 158, 158).brighter();
+                } else {
+                    bgColor = new Color(158, 158, 158);
+                }
+                g2d.setColor(bgColor);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.dispose();
+            }
+        };
+        cancelBtn.setForeground(Color.WHITE);
+        cancelBtn.setBorderPainted(false);
+        cancelBtn.setFocusPainted(false);
+        cancelBtn.setContentAreaFilled(false);
+        cancelBtn.setPreferredSize(new Dimension(100, 40));
+        cancelBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
+        cancelBtn.addActionListener(e -> rangeDialog.dispose());
+        
+        JButton applyBtn = new JButton("Apply") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bgColor;
+                if (getModel().isPressed()) {
+                    bgColor = new Color(33, 150, 243).darker();
+                } else if (getModel().isRollover()) {
+                    bgColor = new Color(33, 150, 243).brighter();
+                } else {
+                    bgColor = new Color(33, 150, 243);
+                }
+                g2d.setColor(bgColor);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.dispose();
+            }
+        };
+        applyBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
+        applyBtn.setForeground(Color.WHITE);
+        applyBtn.setBorderPainted(false);
+        applyBtn.setFocusPainted(false);
+        applyBtn.setContentAreaFilled(false);
+        applyBtn.setPreferredSize(new Dimension(100, 40));
+        
+        applyBtn.addActionListener(e -> {
+            try {
+                LocalDate start = LocalDate.parse(startDateField.getText().trim());
+                LocalDate end = LocalDate.parse(endDateField.getText().trim());
+                
+                if (start.isAfter(end)) {
+                    JOptionPane.showMessageDialog(rangeDialog, "Tanggal mulai tidak boleh lebih besar dari tanggal akhir", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                reportStartDate = start;
+                reportEndDate = end;
+                rangeDialog.dispose();
+                refreshReportPanel();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(rangeDialog, "Format tanggal harus YYYY-MM-DD", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        buttonPanel.add(cancelBtn);
+        buttonPanel.add(applyBtn);
+        rootPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        rangeDialog.add(rootPanel);
+        rangeDialog.setVisible(true);
+    }
+
+    private void refreshReportPanel() {
+        if (reportPanel != null) {
+            contentArea.remove(reportPanel);
+            reportPanel = createReportPanel();
+            contentArea.add(reportPanel, "REPORT");
+            if (activeMenu.equals("REPORT")) {
+                cardLayout.show(contentArea, "REPORT");
+            }
+        }
+    }
+
+    private void refreshDashboardPanel() {
+        if (dashboardPanel != null) {
+            contentArea.remove(dashboardPanel);
+            dashboardPanel = createDashboardPanel();
+            contentArea.add(dashboardPanel, "DASHBOARD");
+            if (activeMenu.equals("Overview")) {
+                cardLayout.show(contentArea, "DASHBOARD");
+            }
+        }
+    }
+
+    private void refreshOverviewAndReport() {
+        refreshDashboardPanel();
+        refreshReportPanel();
     }
 }
