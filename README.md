@@ -18,7 +18,6 @@ Aplikasi manajemen laundry modern berbasis **Java Swing** dengan antarmuka pengg
 - [Cara Penggunaan](#-cara-penggunaan)
 - [Struktur Proyek](#-struktur-proyek)
 - [Fitur Detail](#-fitur-detail)
-- [👨‍💻 Developer](#developer)
 
 ---
 
