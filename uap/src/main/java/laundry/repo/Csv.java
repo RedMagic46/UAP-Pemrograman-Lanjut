@@ -34,12 +34,24 @@ public class Csv {
             while ((line = br.readLine()) != null) {
                 String[] parts = CsvUtil.parseLine(line);
                 if (parts.length == 5) {
+                    LocalDate orderDate = LocalDate.parse(parts[3]);
+                    LocalDate pickupDate = orderDate.plusDays(1);
+                    orders.add(new Laundry(
+                            parts[0],
+                            ServiceType.valueOf(parts[1]),
+                            Double.parseDouble(parts[2]),
+                            orderDate,
+                            pickupDate,
+                            OrderStatus.valueOf(parts[4])
+                    ));
+                } else if (parts.length == 6) {
                     orders.add(new Laundry(
                             parts[0],
                             ServiceType.valueOf(parts[1]),
                             Double.parseDouble(parts[2]),
                             LocalDate.parse(parts[3]),
-                            OrderStatus.valueOf(parts[4])
+                            LocalDate.parse(parts[4]),
+                            OrderStatus.valueOf(parts[5])
                     ));
                 }
             }
@@ -57,6 +69,7 @@ public class Csv {
                         o.getServiceType().name(),
                         String.valueOf(o.getWeightKg()),
                         o.getOrderDate().toString(),
+                        o.getPickupDate().toString(),
                         o.getStatus().name()
                 ));
             }

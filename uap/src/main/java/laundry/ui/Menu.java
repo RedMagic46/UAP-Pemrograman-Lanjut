@@ -2,6 +2,7 @@ package laundry.ui;
 
 import javax.swing.*;
 import javax.swing.table.*;
+import javax.swing.DefaultListCellRenderer;
 import java.awt.*;
 import java.text.NumberFormat;
 import java.time.LocalDate;
@@ -353,9 +354,9 @@ public class Menu extends JFrame {
         for (Laundry order : recentOrders) {
             int actualIndex = allOrders.indexOf(order);
             String orderId = "ORD-" + String.format("%03d", actualIndex + 1);
-            String serviceType = order.getServiceType().name();
+            String serviceType = getServiceTypeDisplayName(order.getServiceType());
             String status = order.getStatus().name();
-            String pickupDate = order.getOrderDate().toString();
+            String pickupDate = order.getPickupDate().toString();
             String totalAmount = "Rp " + currencyFormat.format(app.getService().calculatePrice(order));
 
             model.addRow(new Object[]{orderId, serviceType, status, pickupDate, totalAmount});
@@ -663,13 +664,13 @@ public class Menu extends JFrame {
                 JOptionPane.showMessageDialog(this, "Pesanan ini sudah selesai", "Info", JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
-            int confirm = JOptionPane.showConfirmDialog(this, "Tandai pesanan ini sebagai selesai?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
-            if (confirm != JOptionPane.YES_OPTION) return;
+            boolean confirmed = showCompleteConfirmDialog();
+            if (!confirmed) return;
             selected.setStatus(OrderStatus.SELESAI);
             app.persist();
             refreshListTable(listDataModel);
             refreshOverviewAndReport();
-            JOptionPane.showMessageDialog(this, "Pesanan berhasil ditandai selesai", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+            showCompleteSuccessDialog();
         });
 
         delBtn.addActionListener(e -> {
@@ -684,13 +685,13 @@ public class Menu extends JFrame {
                 JOptionPane.showMessageDialog(this, "Pesanan yang sudah selesai tidak dapat dihapus", "Info", JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
-            int confirm = JOptionPane.showConfirmDialog(this, "Yakin hapus data?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
-            if (confirm != JOptionPane.YES_OPTION) return;
+            boolean confirmed = showDeleteConfirmDialog();
+            if (!confirmed) return;
             app.getOrders().remove(modelIndex);
             app.persist();
             refreshListTable(listDataModel);
             refreshOverviewAndReport();
-            JOptionPane.showMessageDialog(this, "Pesanan berhasil dihapus", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+            showDeleteSuccessDialog();
         });
 
         actions.add(editBtn);
@@ -701,12 +702,25 @@ public class Menu extends JFrame {
         return root;
     }
 
+    private String getServiceTypeDisplayName(ServiceType serviceType) {
+        switch (serviceType) {
+            case CUCI_KERING:
+                return "Cuci Kering";
+            case SETRIKA:
+                return "Setrika Saja";
+            case CUCI_SETIRIKA:
+                return "Cuci Setrika";
+            default:
+                return serviceType.name();
+        }
+    }
+
     private void refreshListTable(DefaultTableModel model) {
         model.setRowCount(0);
         for (Laundry o : app.getOrders()) {
             model.addRow(new Object[]{
                 o.getCustomerName(),
-                o.getServiceType().name(),
+                getServiceTypeDisplayName(o.getServiceType()),
                 o.getWeightKg(),
                 o.getOrderDate().toString(),
                 o.getStatus().name()
@@ -717,6 +731,7 @@ public class Menu extends JFrame {
     private JTextField inputNameField;
     private JTextField inputWeightField;
     private JTextField inputDateField;
+    private JTextField inputPickupDateField;
     private JComboBox<ServiceType> inputServiceBox;
     private JComboBox<OrderStatus> inputStatusBox;
     private Laundry editingOrder;
@@ -740,26 +755,263 @@ public class Menu extends JFrame {
 
         root.add(header, BorderLayout.NORTH);
 
-        JPanel form = new JPanel(new GridLayout(6, 2, 10, 10));
+        JPanel form = new JPanel(new GridBagLayout());
         form.setBackground(Color.WHITE);
         form.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(15, 15, 15, 15);
+        gbc.anchor = GridBagConstraints.WEST;
 
-        inputNameField = new JTextField();
-        inputWeightField = new JTextField();
-        inputServiceBox = new JComboBox<>(ServiceType.values());
-        inputStatusBox = new JComboBox<>(OrderStatus.values());
-        inputDateField = new JTextField(LocalDate.now().toString());
+        inputNameField = new JTextField() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(getBackground());
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+                super.paintComponent(g);
+                g2d.setColor(new Color(200, 200, 200));
+                g2d.setStroke(new BasicStroke(1.0f));
+                g2d.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
+                g2d.dispose();
+            }
+        };
+        inputNameField.setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 12));
+        inputNameField.setOpaque(false);
+        inputNameField.setBackground(Color.WHITE);
+        inputNameField.setPreferredSize(new Dimension(300, 40));
 
-        form.add(new JLabel("Nama:"));
-        form.add(inputNameField);
-        form.add(new JLabel("Berat (kg):"));
-        form.add(inputWeightField);
-        form.add(new JLabel("Layanan:"));
-        form.add(inputServiceBox);
-        form.add(new JLabel("Status:"));
-        form.add(inputStatusBox);
-        form.add(new JLabel("Tanggal (YYYY-MM-DD):"));
-        form.add(inputDateField);
+        inputWeightField = new JTextField() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(getBackground());
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+                super.paintComponent(g);
+                g2d.setColor(new Color(200, 200, 200));
+                g2d.setStroke(new BasicStroke(1.0f));
+                g2d.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
+                g2d.dispose();
+            }
+        };
+        inputWeightField.setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 12));
+        inputWeightField.setOpaque(false);
+        inputWeightField.setBackground(Color.WHITE);
+        inputWeightField.setPreferredSize(new Dimension(300, 40));
+
+        inputServiceBox = new JComboBox<ServiceType>(ServiceType.values()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(Color.WHITE);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+                super.paintComponent(g);
+                g2d.setColor(new Color(200, 200, 200));
+                g2d.setStroke(new BasicStroke(1.0f));
+                g2d.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
+                g2d.dispose();
+            }
+        };
+        inputServiceBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof ServiceType) {
+                    ((JLabel) c).setText(getServiceTypeDisplayName((ServiceType) value));
+                }
+                return c;
+            }
+        });
+        inputServiceBox.setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 12));
+        inputServiceBox.setOpaque(false);
+        inputServiceBox.setBackground(Color.WHITE);
+        inputServiceBox.setPreferredSize(new Dimension(300, 40));
+        inputServiceBox.setUI(new javax.swing.plaf.basic.BasicComboBoxUI() {
+            @Override
+            protected JButton createArrowButton() {
+                JButton button = new JButton() {
+                    @Override
+                    protected void paintComponent(Graphics g) {
+                        Graphics2D g2d = (Graphics2D) g.create();
+                        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                        g2d.setColor(Color.WHITE);
+                        g2d.fillRect(0, 0, getWidth(), getHeight());
+                        g2d.setColor(new Color(100, 100, 100));
+                        int[] xPoints = {getWidth() / 2 - 5, getWidth() / 2, getWidth() / 2 + 5};
+                        int[] yPoints = {getHeight() / 2 - 2, getHeight() / 2 + 3, getHeight() / 2 - 2};
+                        g2d.fillPolygon(xPoints, yPoints, 3);
+                        g2d.dispose();
+                    }
+                };
+                button.setBorderPainted(false);
+                button.setContentAreaFilled(false);
+                button.setFocusPainted(false);
+                return button;
+            }
+        });
+
+        inputStatusBox = new JComboBox<OrderStatus>(OrderStatus.values()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(Color.WHITE);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+                super.paintComponent(g);
+                g2d.setColor(new Color(200, 200, 200));
+                g2d.setStroke(new BasicStroke(1.0f));
+                g2d.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
+                g2d.dispose();
+            }
+        };
+        inputStatusBox.setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 12));
+        inputStatusBox.setOpaque(false);
+        inputStatusBox.setBackground(Color.WHITE);
+        inputStatusBox.setPreferredSize(new Dimension(300, 40));
+        inputStatusBox.setUI(new javax.swing.plaf.basic.BasicComboBoxUI() {
+            @Override
+            protected JButton createArrowButton() {
+                JButton button = new JButton() {
+                    @Override
+                    protected void paintComponent(Graphics g) {
+                        Graphics2D g2d = (Graphics2D) g.create();
+                        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                        g2d.setColor(Color.WHITE);
+                        g2d.fillRect(0, 0, getWidth(), getHeight());
+                        g2d.setColor(new Color(100, 100, 100));
+                        int[] xPoints = {getWidth() / 2 - 5, getWidth() / 2, getWidth() / 2 + 5};
+                        int[] yPoints = {getHeight() / 2 - 2, getHeight() / 2 + 3, getHeight() / 2 - 2};
+                        g2d.fillPolygon(xPoints, yPoints, 3);
+                        g2d.dispose();
+                    }
+                };
+                button.setBorderPainted(false);
+                button.setContentAreaFilled(false);
+                button.setFocusPainted(false);
+                return button;
+            }
+        });
+
+        LocalDate today = LocalDate.now();
+        inputDateField = new JTextField(today.toString()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(getBackground());
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+                super.paintComponent(g);
+                g2d.setColor(new Color(200, 200, 200));
+                g2d.setStroke(new BasicStroke(1.0f));
+                g2d.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
+                g2d.dispose();
+            }
+        };
+        inputDateField.setEditable(false);
+        inputDateField.setEnabled(false);
+        inputDateField.setBackground(new Color(240, 240, 240));
+        inputDateField.setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 12));
+        inputDateField.setOpaque(false);
+        inputDateField.setPreferredSize(new Dimension(300, 40));
+
+        inputPickupDateField = new JTextField(today.plusDays(1).toString()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(getBackground());
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+                super.paintComponent(g);
+                g2d.setColor(new Color(200, 200, 200));
+                g2d.setStroke(new BasicStroke(1.0f));
+                g2d.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
+                g2d.dispose();
+            }
+        };
+        inputPickupDateField.setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 12));
+        inputPickupDateField.setOpaque(false);
+        inputPickupDateField.setBackground(Color.WHITE);
+        inputPickupDateField.setPreferredSize(new Dimension(300, 40));
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0;
+        JLabel nameLabel = new JLabel("Nama:");
+        nameLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        form.add(nameLabel, gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        form.add(inputNameField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0;
+        JLabel weightLabel = new JLabel("Berat (kg):");
+        weightLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        form.add(weightLabel, gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        form.add(inputWeightField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0;
+        JLabel serviceLabel = new JLabel("Layanan:");
+        serviceLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        form.add(serviceLabel, gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        form.add(inputServiceBox, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0;
+        JLabel statusLabel = new JLabel("Status:");
+        statusLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        form.add(statusLabel, gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        form.add(inputStatusBox, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0;
+        JLabel orderDateLabel = new JLabel("Tanggal Order:");
+        orderDateLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        form.add(orderDateLabel, gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        form.add(inputDateField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 5;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0;
+        JLabel pickupDateLabel = new JLabel("Tanggal Pickup:");
+        pickupDateLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        form.add(pickupDateLabel, gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        form.add(inputPickupDateField, gbc);
 
         root.add(form, BorderLayout.CENTER);
 
@@ -788,16 +1040,18 @@ public class Menu extends JFrame {
 
         saveBtn.addActionListener(e -> {
             try {
-                Laundry order = buildOrderFromInputForm();
                 if (editingOrder == null) {
+                    inputDateField.setText(LocalDate.now().toString());
+                    Laundry order = buildOrderFromInputForm();
                     app.getService().validateOrder(order);
                     app.getOrders().add(order);
                 } else {
+                    Laundry order = buildOrderFromInputForm();
                     editingOrder.setCustomerName(order.getCustomerName());
                     editingOrder.setWeightKg(order.getWeightKg());
                     editingOrder.setServiceType(order.getServiceType());
                     editingOrder.setStatus(order.getStatus());
-                    editingOrder.setOrderDate(order.getOrderDate());
+                    editingOrder.setPickupDate(order.getPickupDate());
                 }
                 app.persist();
                 refreshOverviewAndReport();
@@ -826,6 +1080,9 @@ public class Menu extends JFrame {
         inputServiceBox.setSelectedItem(order.getServiceType());
         inputStatusBox.setSelectedItem(order.getStatus());
         inputDateField.setText(order.getOrderDate().toString());
+        inputDateField.setEditable(false);
+        inputDateField.setEnabled(false);
+        inputPickupDateField.setText(order.getPickupDate().toString());
     }
 
     private void clearInputForm() {
@@ -833,7 +1090,11 @@ public class Menu extends JFrame {
         inputWeightField.setText("");
         inputServiceBox.setSelectedIndex(0);
         inputStatusBox.setSelectedIndex(0);
-        inputDateField.setText(LocalDate.now().toString());
+        LocalDate today = LocalDate.now();
+        inputDateField.setText(today.toString());
+        inputPickupDateField.setText(today.plusDays(1).toString());
+        inputDateField.setEditable(false);
+        inputDateField.setEnabled(false);
     }
 
     private Laundry buildOrderFromInputForm() throws Validation {
@@ -846,14 +1107,20 @@ public class Menu extends JFrame {
         }
         ServiceType service = (ServiceType) inputServiceBox.getSelectedItem();
         OrderStatus status = (OrderStatus) inputStatusBox.getSelectedItem();
-        LocalDate date;
+        LocalDate orderDate;
         try {
-            date = LocalDate.parse(inputDateField.getText().trim());
+            orderDate = LocalDate.parse(inputDateField.getText().trim());
         } catch (Exception e) {
-            throw new Validation("Format tanggal harus YYYY-MM-DD");
+            throw new Validation("Format tanggal order harus YYYY-MM-DD");
+        }
+        LocalDate pickupDate;
+        try {
+            pickupDate = LocalDate.parse(inputPickupDateField.getText().trim());
+        } catch (Exception e) {
+            throw new Validation("Format tanggal pickup harus YYYY-MM-DD");
         }
 
-        Laundry order = new Laundry(name, service, weight, date, status);
+        Laundry order = new Laundry(name, service, weight, orderDate, pickupDate, status);
         app.getService().validateOrder(order);
         return order;
     }
@@ -1283,6 +1550,16 @@ public class Menu extends JFrame {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 1.0;
         JComboBox<ServiceType> serviceBox = new JComboBox<>(ServiceType.values());
+        serviceBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof ServiceType) {
+                    ((JLabel) c).setText(getServiceTypeDisplayName((ServiceType) value));
+                }
+                return c;
+            }
+        });
         serviceBox.setSelectedItem(order.getServiceType());
         serviceBox.setPreferredSize(new Dimension(250, 35));
         dialogPanel.add(serviceBox, gbc);
@@ -1305,7 +1582,7 @@ public class Menu extends JFrame {
         gbc.gridy = 5;
         gbc.fill = GridBagConstraints.NONE;
         gbc.weightx = 0;
-        dialogPanel.add(new JLabel("Tanggal (YYYY-MM-DD):"), gbc);
+        dialogPanel.add(new JLabel("Tanggal Order (YYYY-MM-DD):"), gbc);
 
         gbc.gridx = 1;
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -1329,6 +1606,35 @@ public class Menu extends JFrame {
         dateField.setBackground(Color.WHITE);
         dateField.setPreferredSize(new Dimension(250, 35));
         dialogPanel.add(dateField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 6;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0;
+        dialogPanel.add(new JLabel("Tanggal Pickup (YYYY-MM-DD):"), gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        JTextField pickupDateField = new JTextField(order.getPickupDate().toString()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(getBackground());
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.setColor(new Color(200, 200, 200));
+                g2d.setStroke(new BasicStroke(1.0f));
+                g2d.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
+                g2d.dispose();
+            }
+        };
+        pickupDateField.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+        pickupDateField.setOpaque(false);
+        pickupDateField.setBackground(Color.WHITE);
+        pickupDateField.setPreferredSize(new Dimension(250, 35));
+        dialogPanel.add(pickupDateField, gbc);
 
         rootPanel.add(dialogPanel, BorderLayout.CENTER);
 
@@ -1404,22 +1710,30 @@ public class Menu extends JFrame {
             }
             ServiceType service = (ServiceType) serviceBox.getSelectedItem();
             OrderStatus status = (OrderStatus) statusBox.getSelectedItem();
-            LocalDate date;
+            LocalDate orderDate;
             try {
-                date = LocalDate.parse(dateField.getText().trim());
+                orderDate = LocalDate.parse(dateField.getText().trim());
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(editDialog, "Format tanggal harus YYYY-MM-DD", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(editDialog, "Format tanggal order harus YYYY-MM-DD", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            LocalDate pickupDate;
+            try {
+                pickupDate = LocalDate.parse(pickupDateField.getText().trim());
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(editDialog, "Format tanggal pickup harus YYYY-MM-DD", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
             try {
-                Laundry updatedOrder = new Laundry(name, service, weight, date, status);
+                Laundry updatedOrder = new Laundry(name, service, weight, orderDate, pickupDate, status);
                 app.getService().validateOrder(updatedOrder);
                 order.setCustomerName(name);
                 order.setWeightKg(weight);
                 order.setServiceType(service);
                 order.setStatus(status);
-                order.setOrderDate(date);
+                order.setOrderDate(orderDate);
+                order.setPickupDate(pickupDate);
                 app.persist();
                 refreshListTable(listDataModel);
                 refreshOverviewAndReport();
@@ -1703,9 +2017,9 @@ public class Menu extends JFrame {
         for (Laundry order : filteredOrders) {
             int actualIndex = allOrders.indexOf(order);
             String orderId = "ORD-" + String.format("%03d", actualIndex + 1);
-            String serviceType = order.getServiceType().name();
+            String serviceType = getServiceTypeDisplayName(order.getServiceType());
             String status = order.getStatus().name();
-            String pickupDate = order.getOrderDate().toString();
+            String pickupDate = order.getPickupDate().toString();
             String totalAmount = "Rp " + currencyFormat.format(app.getService().calculatePrice(order));
             
             model.addRow(new Object[]{orderId, serviceType, status, pickupDate, totalAmount});
@@ -1970,5 +2284,337 @@ public class Menu extends JFrame {
     private void refreshOverviewAndReport() {
         refreshDashboardPanel();
         refreshReportPanel();
+    }
+
+    private boolean showDeleteConfirmDialog() {
+        JDialog confirmDialog = new JDialog(this, "Konfirmasi", true);
+        confirmDialog.setSize(400, 180);
+        confirmDialog.setLocationRelativeTo(this);
+
+        JPanel rootPanel = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                GradientPaint gradient = new GradientPaint(
+                    0, 0, Color.WHITE,
+                    0, getHeight(), new Color(227, 242, 253)
+                );
+                g2d.setPaint(gradient);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+                g2d.dispose();
+            }
+        };
+        rootPanel.setOpaque(true);
+        rootPanel.setBorder(BorderFactory.createEmptyBorder(25, 30, 25, 30));
+
+        JLabel messageLabel = new JLabel("Yakin hapus data?");
+        messageLabel.setFont(new Font("SansSerif", Font.PLAIN, 16));
+        messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        rootPanel.add(messageLabel, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
+        buttonPanel.setOpaque(false);
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
+
+        final boolean[] result = {false};
+
+        JButton noBtn = new JButton("Tidak") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bgColor;
+                if (getModel().isPressed()) {
+                    bgColor = new Color(158, 158, 158).darker();
+                } else if (getModel().isRollover()) {
+                    bgColor = new Color(158, 158, 158).brighter();
+                } else {
+                    bgColor = new Color(158, 158, 158);
+                }
+                g2d.setColor(bgColor);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.dispose();
+            }
+        };
+        noBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
+        noBtn.setForeground(Color.WHITE);
+        noBtn.setBorderPainted(false);
+        noBtn.setFocusPainted(false);
+        noBtn.setContentAreaFilled(false);
+        noBtn.setPreferredSize(new Dimension(100, 40));
+        noBtn.addActionListener(e -> {
+            result[0] = false;
+            confirmDialog.dispose();
+        });
+
+        JButton yesBtn = new JButton("Ya") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bgColor;
+                if (getModel().isPressed()) {
+                    bgColor = new Color(244, 67, 54).darker();
+                } else if (getModel().isRollover()) {
+                    bgColor = new Color(244, 67, 54).brighter();
+                } else {
+                    bgColor = new Color(244, 67, 54);
+                }
+                g2d.setColor(bgColor);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.dispose();
+            }
+        };
+        yesBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
+        yesBtn.setForeground(Color.WHITE);
+        yesBtn.setBorderPainted(false);
+        yesBtn.setFocusPainted(false);
+        yesBtn.setContentAreaFilled(false);
+        yesBtn.setPreferredSize(new Dimension(100, 40));
+        yesBtn.addActionListener(e -> {
+            result[0] = true;
+            confirmDialog.dispose();
+        });
+
+        buttonPanel.add(noBtn);
+        buttonPanel.add(yesBtn);
+        rootPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        confirmDialog.add(rootPanel);
+        confirmDialog.setVisible(true);
+
+        return result[0];
+    }
+
+    private void showDeleteSuccessDialog() {
+        JDialog successDialog = new JDialog(this, "Sukses", true);
+        successDialog.setSize(400, 180);
+        successDialog.setLocationRelativeTo(this);
+
+        JPanel rootPanel = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                GradientPaint gradient = new GradientPaint(
+                    0, 0, Color.WHITE,
+                    0, getHeight(), new Color(227, 242, 253)
+                );
+                g2d.setPaint(gradient);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+                g2d.dispose();
+            }
+        };
+        rootPanel.setOpaque(true);
+        rootPanel.setBorder(BorderFactory.createEmptyBorder(25, 30, 25, 30));
+
+        JLabel messageLabel = new JLabel("Pesanan berhasil dihapus");
+        messageLabel.setFont(new Font("SansSerif", Font.PLAIN, 16));
+        messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        rootPanel.add(messageLabel, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        buttonPanel.setOpaque(false);
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
+
+        JButton okBtn = new JButton("OK") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bgColor;
+                if (getModel().isPressed()) {
+                    bgColor = new Color(76, 175, 80).darker();
+                } else if (getModel().isRollover()) {
+                    bgColor = new Color(76, 175, 80).brighter();
+                } else {
+                    bgColor = new Color(76, 175, 80);
+                }
+                g2d.setColor(bgColor);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.dispose();
+            }
+        };
+        okBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
+        okBtn.setForeground(Color.WHITE);
+        okBtn.setBorderPainted(false);
+        okBtn.setFocusPainted(false);
+        okBtn.setContentAreaFilled(false);
+        okBtn.setPreferredSize(new Dimension(100, 40));
+        okBtn.addActionListener(e -> successDialog.dispose());
+
+        buttonPanel.add(okBtn);
+        rootPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        successDialog.add(rootPanel);
+        successDialog.setVisible(true);
+    }
+
+    private boolean showCompleteConfirmDialog() {
+        JDialog confirmDialog = new JDialog(this, "Konfirmasi", true);
+        confirmDialog.setSize(450, 180);
+        confirmDialog.setLocationRelativeTo(this);
+
+        JPanel rootPanel = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                GradientPaint gradient = new GradientPaint(
+                    0, 0, Color.WHITE,
+                    0, getHeight(), new Color(227, 242, 253)
+                );
+                g2d.setPaint(gradient);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+                g2d.dispose();
+            }
+        };
+        rootPanel.setOpaque(true);
+        rootPanel.setBorder(BorderFactory.createEmptyBorder(25, 30, 25, 30));
+
+        JLabel messageLabel = new JLabel("Tandai pesanan ini sebagai selesai?");
+        messageLabel.setFont(new Font("SansSerif", Font.PLAIN, 16));
+        messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        rootPanel.add(messageLabel, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
+        buttonPanel.setOpaque(false);
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
+
+        final boolean[] result = {false};
+
+        JButton noBtn = new JButton("Tidak") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bgColor;
+                if (getModel().isPressed()) {
+                    bgColor = new Color(158, 158, 158).darker();
+                } else if (getModel().isRollover()) {
+                    bgColor = new Color(158, 158, 158).brighter();
+                } else {
+                    bgColor = new Color(158, 158, 158);
+                }
+                g2d.setColor(bgColor);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.dispose();
+            }
+        };
+        noBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
+        noBtn.setForeground(Color.WHITE);
+        noBtn.setBorderPainted(false);
+        noBtn.setFocusPainted(false);
+        noBtn.setContentAreaFilled(false);
+        noBtn.setPreferredSize(new Dimension(100, 40));
+        noBtn.addActionListener(e -> {
+            result[0] = false;
+            confirmDialog.dispose();
+        });
+
+        JButton yesBtn = new JButton("Ya") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bgColor;
+                if (getModel().isPressed()) {
+                    bgColor = new Color(76, 175, 80).darker();
+                } else if (getModel().isRollover()) {
+                    bgColor = new Color(76, 175, 80).brighter();
+                } else {
+                    bgColor = new Color(76, 175, 80);
+                }
+                g2d.setColor(bgColor);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.dispose();
+            }
+        };
+        yesBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
+        yesBtn.setForeground(Color.WHITE);
+        yesBtn.setBorderPainted(false);
+        yesBtn.setFocusPainted(false);
+        yesBtn.setContentAreaFilled(false);
+        yesBtn.setPreferredSize(new Dimension(100, 40));
+        yesBtn.addActionListener(e -> {
+            result[0] = true;
+            confirmDialog.dispose();
+        });
+
+        buttonPanel.add(noBtn);
+        buttonPanel.add(yesBtn);
+        rootPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        confirmDialog.add(rootPanel);
+        confirmDialog.setVisible(true);
+
+        return result[0];
+    }
+
+    private void showCompleteSuccessDialog() {
+        JDialog successDialog = new JDialog(this, "Sukses", true);
+        successDialog.setSize(450, 180);
+        successDialog.setLocationRelativeTo(this);
+
+        JPanel rootPanel = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                GradientPaint gradient = new GradientPaint(
+                    0, 0, Color.WHITE,
+                    0, getHeight(), new Color(227, 242, 253)
+                );
+                g2d.setPaint(gradient);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+                g2d.dispose();
+            }
+        };
+        rootPanel.setOpaque(true);
+        rootPanel.setBorder(BorderFactory.createEmptyBorder(25, 30, 25, 30));
+
+        JLabel messageLabel = new JLabel("Pesanan berhasil ditandai selesai");
+        messageLabel.setFont(new Font("SansSerif", Font.PLAIN, 16));
+        messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        rootPanel.add(messageLabel, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        buttonPanel.setOpaque(false);
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
+
+        JButton okBtn = new JButton("OK") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bgColor;
+                if (getModel().isPressed()) {
+                    bgColor = new Color(76, 175, 80).darker();
+                } else if (getModel().isRollover()) {
+                    bgColor = new Color(76, 175, 80).brighter();
+                } else {
+                    bgColor = new Color(76, 175, 80);
+                }
+                g2d.setColor(bgColor);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.dispose();
+            }
+        };
+        okBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
+        okBtn.setForeground(Color.WHITE);
+        okBtn.setBorderPainted(false);
+        okBtn.setFocusPainted(false);
+        okBtn.setContentAreaFilled(false);
+        okBtn.setPreferredSize(new Dimension(100, 40));
+        okBtn.addActionListener(e -> successDialog.dispose());
+
+        buttonPanel.add(okBtn);
+        rootPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        successDialog.add(rootPanel);
+        successDialog.setVisible(true);
     }
 }
