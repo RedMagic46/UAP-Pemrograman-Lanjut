@@ -30,6 +30,7 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+<<<<<<< Updated upstream
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
     &quot;state&quot;: &quot;OPEN&quot;,
@@ -42,6 +43,20 @@
     &quot;accountId&quot;: &quot;b9e1f367-14ce-446f-8745-9b76c2d6dc12&quot;
   }
 }</component>
+=======
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "santun688"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/RedMagic46/UAP-Pemrograman-Lanjut.git",
+    "accountId": "e634132a-c16f-4cd7-97b3-6d7d45dde6ec"
+  }
+}]]></component>
+>>>>>>> Stashed changes
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 7
 }</component>
@@ -98,6 +113,7 @@
       <updated>1766145353511</updated>
       <workItem from="1766145354671" duration="11945000" />
       <workItem from="1766157920905" duration="1073000" />
+<<<<<<< Updated upstream
       <workItem from="1766159574157" duration="3455000" />
       <workItem from="1766163579224" duration="1306000" />
       <workItem from="1766171154224" duration="4091000" />
@@ -105,6 +121,9 @@
       <workItem from="1766208888075" duration="1934000" />
       <workItem from="1766226502898" duration="352000" />
       <workItem from="1766227274701" duration="56000" />
+=======
+      <workItem from="1766159574157" duration="4049000" />
+>>>>>>> Stashed changes
     </task>
     <servers />
   </component>
