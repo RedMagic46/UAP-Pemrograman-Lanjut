@@ -646,7 +646,7 @@ public class Menu extends JFrame {
             int modelIndex = table.convertRowIndexToModel(row);
             Laundry selected = app.getOrders().get(modelIndex);
             if (selected.getStatus() == OrderStatus.SELESAI) {
-                JOptionPane.showMessageDialog(this, "Pesanan yang sudah selesai tidak dapat diedit", "Info", JOptionPane.INFORMATION_MESSAGE);
+                showInfoDialog(this, "Pesanan yang sudah selesai tidak dapat diedit");
                 return;
             }
             showEditOrderDialog(selected, modelIndex);
@@ -661,7 +661,7 @@ public class Menu extends JFrame {
             int modelIndex = table.convertRowIndexToModel(row);
             Laundry selected = app.getOrders().get(modelIndex);
             if (selected.getStatus() == OrderStatus.SELESAI) {
-                JOptionPane.showMessageDialog(this, "Pesanan ini sudah selesai", "Info", JOptionPane.INFORMATION_MESSAGE);
+                showInfoDialog(this, "Pesanan ini sudah selesai");
                 return;
             }
             boolean confirmed = showCompleteConfirmDialog();
@@ -682,7 +682,7 @@ public class Menu extends JFrame {
             int modelIndex = table.convertRowIndexToModel(row);
             Laundry selected = app.getOrders().get(modelIndex);
             if (selected.getStatus() == OrderStatus.SELESAI) {
-                JOptionPane.showMessageDialog(this, "Pesanan yang sudah selesai tidak dapat dihapus", "Info", JOptionPane.INFORMATION_MESSAGE);
+                showInfoDialog(this, "Pesanan yang sudah selesai tidak dapat dihapus");
                 return;
             }
             boolean confirmed = showDeleteConfirmDialog();
@@ -1697,7 +1697,7 @@ public class Menu extends JFrame {
         
         saveBtn.addActionListener(e -> {
             if (order.getStatus() == OrderStatus.SELESAI) {
-                JOptionPane.showMessageDialog(editDialog, "Pesanan yang sudah selesai tidak dapat diedit", "Info", JOptionPane.INFORMATION_MESSAGE);
+                showInfoDialog(editDialog, "Pesanan yang sudah selesai tidak dapat diedit");
                 return;
             }
             String name = nameField.getText().trim();
@@ -2616,5 +2616,69 @@ public class Menu extends JFrame {
 
         successDialog.add(rootPanel);
         successDialog.setVisible(true);
+    }
+
+    private void showInfoDialog(Component parent, String message) {
+        JDialog infoDialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(parent), "Info", true);
+        infoDialog.setSize(400, 180);
+        infoDialog.setLocationRelativeTo(parent);
+
+        JPanel rootPanel = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                GradientPaint gradient = new GradientPaint(
+                    0, 0, Color.WHITE,
+                    0, getHeight(), new Color(227, 242, 253)
+                );
+                g2d.setPaint(gradient);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+                g2d.dispose();
+            }
+        };
+        rootPanel.setOpaque(true);
+        rootPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        JLabel messageLabel = new JLabel("<html><div style='text-align: center;'>" + message + "</div></html>");
+        messageLabel.setFont(new Font("SansSerif", Font.PLAIN, 16));
+        messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        rootPanel.add(messageLabel, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        buttonPanel.setOpaque(false);
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
+
+        JButton okBtn = new JButton("OK") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bgColor;
+                if (getModel().isPressed()) {
+                    bgColor = new Color(33, 150, 243).darker();
+                } else if (getModel().isRollover()) {
+                    bgColor = new Color(33, 150, 243).brighter();
+                } else {
+                    bgColor = new Color(33, 150, 243);
+                }
+                g2d.setColor(bgColor);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.dispose();
+            }
+        };
+        okBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
+        okBtn.setForeground(Color.WHITE);
+        okBtn.setBorderPainted(false);
+        okBtn.setFocusPainted(false);
+        okBtn.setContentAreaFilled(false);
+        okBtn.setPreferredSize(new Dimension(100, 40));
+        okBtn.addActionListener(e -> infoDialog.dispose());
+
+        buttonPanel.add(okBtn);
+        rootPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        infoDialog.add(rootPanel);
+        infoDialog.setVisible(true);
     }
 }

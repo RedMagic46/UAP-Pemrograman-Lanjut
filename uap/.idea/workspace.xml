@@ -10,6 +10,8 @@
       <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/laundry/Frame.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/laundry/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/laundry/Main.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/laundry/model/Laundry.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/laundry/model/Laundry.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/laundry/repo/Csv.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/laundry/repo/Csv.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/laundry/service/LaundryService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/laundry/service/LaundryService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/laundry/ui/InputF.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/laundry/ui/ListData.java" beforeDir="false" />
@@ -115,6 +117,7 @@
       <workItem from="1766243737940" duration="739000" />
       <workItem from="1766247141042" duration="372000" />
       <workItem from="1766304538199" duration="558000" />
+      <workItem from="1766311511065" duration="65000" />
     </task>
     <servers />
   </component>
