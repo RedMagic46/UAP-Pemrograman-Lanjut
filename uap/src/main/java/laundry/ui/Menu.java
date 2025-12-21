@@ -1018,23 +1018,67 @@ public class Menu extends JFrame {
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 10));
         actions.setBackground(Color.WHITE);
         actions.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
-        JButton calcBtn = new JButton("Hitung Harga");
-        JButton saveBtn = new JButton("Simpan");
-        calcBtn.setBackground(new Color(255, 193, 7));
+        JButton calcBtn = new JButton("Hitung Harga") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bgColor;
+                if (getModel().isPressed()) {
+                    bgColor = new Color(255, 193, 7).darker();
+                } else if (getModel().isRollover()) {
+                    bgColor = new Color(255, 193, 7).brighter();
+                } else {
+                    bgColor = new Color(255, 193, 7);
+                }
+                g2d.setColor(bgColor);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.dispose();
+            }
+        };
+        calcBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
         calcBtn.setForeground(Color.BLACK);
-        saveBtn.setBackground(new Color(76, 175, 80));
+        calcBtn.setBorderPainted(false);
+        calcBtn.setFocusPainted(false);
+        calcBtn.setContentAreaFilled(false);
+        calcBtn.setPreferredSize(new Dimension(130, 40));
+        
+        JButton saveBtn = new JButton("Simpan") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bgColor;
+                if (getModel().isPressed()) {
+                    bgColor = new Color(76, 175, 80).darker();
+                } else if (getModel().isRollover()) {
+                    bgColor = new Color(76, 175, 80).brighter();
+                } else {
+                    bgColor = new Color(76, 175, 80);
+                }
+                g2d.setColor(bgColor);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.dispose();
+            }
+        };
+        saveBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
         saveBtn.setForeground(Color.WHITE);
+        saveBtn.setBorderPainted(false);
+        saveBtn.setFocusPainted(false);
+        saveBtn.setContentAreaFilled(false);
+        saveBtn.setPreferredSize(new Dimension(100, 40));
 
         calcBtn.addActionListener(e -> {
             try {
                 Laundry temp = buildOrderFromInputForm();
                 double price = app.getService().calculatePrice(temp);
-                JOptionPane.showMessageDialog(this, "Estimasi Harga: Rp " + (long) price,
-                    "Estimasi", JOptionPane.INFORMATION_MESSAGE);
+                showInfoDialog(this, "Estimasi Harga: Rp " + (long) price);
             } catch (Validation ex) {
-                JOptionPane.showMessageDialog(this, ex.getMessage(), "Validasi", JOptionPane.WARNING_MESSAGE);
+                showInfoDialog(this, ex.getMessage());
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Input tidak valid: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                showInfoDialog(this, "Input tidak valid: " + ex.getMessage());
             }
         });
 
@@ -1060,9 +1104,9 @@ public class Menu extends JFrame {
                 clearInputForm();
                 navigateToMenu("LIST");
             } catch (Validation ex) {
-                JOptionPane.showMessageDialog(this, ex.getMessage(), "Validasi", JOptionPane.WARNING_MESSAGE);
+                showInfoDialog(this, ex.getMessage());
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Gagal menyimpan: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                showInfoDialog(this, "Gagal menyimpan: " + ex.getMessage());
             }
         });
 
