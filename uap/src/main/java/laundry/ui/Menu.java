@@ -13,7 +13,10 @@ import laundry.Main;
 import laundry.model.Laundry;
 import laundry.model.OrderStatus;
 import laundry.model.ServiceType;
+import laundry.model.User;
 import laundry.exception.Validation;
+import laundry.repo.UserCsv;
+import laundry.exception.Data;
 
 public class Menu extends JFrame {
     private final Main app;
@@ -186,6 +189,8 @@ public class Menu extends JFrame {
         updateButtonStates();
         if (menuId.equals("LIST") && listDataModel != null) {
             refreshListTable(listDataModel);
+        } else if (menuId.equals("USERS")) {
+            refreshUsersTable();
         }
         cardLayout.show(contentArea, menuId);
     }
@@ -476,103 +481,52 @@ public class Menu extends JFrame {
                 return false;
             }
         };
-        JTable table = new JTable(listDataModel) {
-            @Override
-            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
-                Component c = super.prepareRenderer(renderer, row, column);
-                if (!isRowSelected(row)) {
-                    c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(250, 250, 250));
-                }
-                return c;
-            }
-        };
+        JTable table = new JTable(listDataModel);
         table.setAutoCreateRowSorter(true);
         TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(listDataModel);
         table.setRowSorter(sorter);
-        table.setRowHeight(50);
+        table.setRowHeight(40);
         table.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        table.setSelectionBackground(new Color(33, 150, 243, 30));
-        table.setSelectionForeground(new Color(30, 58, 95));
-        table.setGridColor(new Color(240, 240, 240));
+        table.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 14));
+        table.getTableHeader().setBackground(new Color(30, 58, 95));
+        table.getTableHeader().setForeground(Color.WHITE);
+        table.setGridColor(new Color(230, 230, 230));
         table.setShowGrid(true);
         table.setIntercellSpacing(new Dimension(0, 0));
-        table.setFillsViewportHeight(true);
 
-        JTableHeader tableHeader = table.getTableHeader();
-        tableHeader.setFont(new Font("SansSerif", Font.BOLD, 14));
-        tableHeader.setBackground(new Color(30, 58, 95));
-        tableHeader.setForeground(Color.WHITE);
-        tableHeader.setPreferredSize(new Dimension(tableHeader.getWidth(), 50));
-        tableHeader.setReorderingAllowed(false);
-
-        DefaultTableCellRenderer headerRenderer = (DefaultTableCellRenderer) tableHeader.getDefaultRenderer();
-        headerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
-        headerRenderer.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
-        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                c.setFont(new Font("SansSerif", Font.PLAIN, 14));
-                ((JLabel) c).setHorizontalAlignment(SwingConstants.CENTER);
-                ((JLabel) c).setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-                if (!isSelected) {
-                    c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(250, 250, 250));
-                }
-                return c;
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+        for (int i = 1; i < table.getColumnCount(); i++) {
+            if (i != 4) {
+                table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
             }
-        };
-
-        DefaultTableCellRenderer leftRenderer = new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                c.setFont(new Font("SansSerif", Font.PLAIN, 14));
-                ((JLabel) c).setHorizontalAlignment(SwingConstants.LEFT);
-                ((JLabel) c).setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
-                if (!isSelected) {
-                    c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(250, 250, 250));
-                }
-                return c;
-            }
-        };
+        }
 
         DefaultTableCellRenderer statusRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                String status = value.toString();
-                c.setFont(new Font("SansSerif", Font.BOLD, 13));
-                ((JLabel) c).setHorizontalAlignment(SwingConstants.CENTER);
-                ((JLabel) c).setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createEmptyBorder(8, 15, 8, 15),
-                    BorderFactory.createEmptyBorder(0, 0, 0, 0)
-                ));
-                ((JLabel) c).setOpaque(true);
-                
-                if (status.equals("PENDING")) {
-                    c.setBackground(new Color(255, 193, 7));
-                    c.setForeground(Color.WHITE);
-                } else if (status.equals("SELESAI")) {
-                    c.setBackground(new Color(76, 175, 80));
-                    c.setForeground(Color.WHITE);
+                if (column == 4) {
+                    String status = value.toString();
+                    if (status.equals("PENDING")) {
+                        c.setBackground(new Color(255, 152, 0));
+                        c.setForeground(Color.WHITE);
+                    } else if (status.equals("SELESAI")) {
+                        c.setBackground(new Color(76, 175, 80));
+                        c.setForeground(Color.WHITE);
+                    } else {
+                        c.setBackground(new Color(33, 150, 243));
+                        c.setForeground(Color.WHITE);
+                    }
+                    ((JLabel) c).setHorizontalAlignment(SwingConstants.CENTER);
+                    ((JLabel) c).setOpaque(true);
                 } else {
-                    c.setBackground(new Color(33, 150, 243));
-                    c.setForeground(Color.WHITE);
+                    c.setBackground(isSelected ? table.getSelectionBackground() : Color.WHITE);
+                    c.setForeground(isSelected ? table.getSelectionForeground() : Color.BLACK);
                 }
-                
-                if (isSelected) {
-                    c.setBackground(((Color) c.getBackground()).darker());
-                }
-                
                 return c;
             }
         };
-
-        table.getColumnModel().getColumn(0).setCellRenderer(leftRenderer);
-        table.getColumnModel().getColumn(1).setCellRenderer(centerRenderer);
-        table.getColumnModel().getColumn(2).setCellRenderer(centerRenderer);
-        table.getColumnModel().getColumn(3).setCellRenderer(centerRenderer);
         table.getColumnModel().getColumn(4).setCellRenderer(statusRenderer);
 
         refreshListTable(listDataModel);
@@ -604,11 +558,11 @@ public class Menu extends JFrame {
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 Color bgColor;
                 if (getModel().isPressed()) {
-                    bgColor = new Color(76, 175, 80).darker();
+                    bgColor = new Color(33, 150, 243).darker();
                 } else if (getModel().isRollover()) {
-                    bgColor = new Color(76, 175, 80).brighter();
+                    bgColor = new Color(33, 150, 243).brighter();
                 } else {
-                    bgColor = new Color(76, 175, 80);
+                    bgColor = new Color(33, 150, 243);
                 }
                 g2d.setColor(bgColor);
                 g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
@@ -622,6 +576,32 @@ public class Menu extends JFrame {
         editBtn.setFocusPainted(false);
         editBtn.setContentAreaFilled(false);
         editBtn.setPreferredSize(new Dimension(100, 40));
+        
+        JButton completeBtn = new JButton("Tandai Selesai") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bgColor;
+                if (getModel().isPressed()) {
+                    bgColor = new Color(76, 175, 80).darker();
+                } else if (getModel().isRollover()) {
+                    bgColor = new Color(76, 175, 80).brighter();
+                } else {
+                    bgColor = new Color(76, 175, 80);
+                }
+                g2d.setColor(bgColor);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.dispose();
+            }
+        };
+        completeBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
+        completeBtn.setForeground(Color.WHITE);
+        completeBtn.setBorderPainted(false);
+        completeBtn.setFocusPainted(false);
+        completeBtn.setContentAreaFilled(false);
+        completeBtn.setPreferredSize(new Dimension(140, 40));
         
         JButton delBtn = new JButton("Hapus") {
             @Override
@@ -657,8 +637,31 @@ public class Menu extends JFrame {
             }
             int modelIndex = table.convertRowIndexToModel(row);
             Laundry selected = app.getOrders().get(modelIndex);
-            navigateToMenu("INPUT");
-            setEditingOrderInInputPanel(selected);
+            if (selected.getStatus() == OrderStatus.SELESAI) {
+                JOptionPane.showMessageDialog(this, "Pesanan yang sudah selesai tidak dapat diedit", "Info", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+            showEditOrderDialog(selected, modelIndex);
+        });
+
+        completeBtn.addActionListener(e -> {
+            int row = table.getSelectedRow();
+            if (row < 0) {
+                JOptionPane.showMessageDialog(this, "Pilih data untuk tandai selesai");
+                return;
+            }
+            int modelIndex = table.convertRowIndexToModel(row);
+            Laundry selected = app.getOrders().get(modelIndex);
+            if (selected.getStatus() == OrderStatus.SELESAI) {
+                JOptionPane.showMessageDialog(this, "Pesanan ini sudah selesai", "Info", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+            int confirm = JOptionPane.showConfirmDialog(this, "Tandai pesanan ini sebagai selesai?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
+            if (confirm != JOptionPane.YES_OPTION) return;
+            selected.setStatus(OrderStatus.SELESAI);
+            app.persist();
+            refreshListTable(listDataModel);
+            JOptionPane.showMessageDialog(this, "Pesanan berhasil ditandai selesai", "Sukses", JOptionPane.INFORMATION_MESSAGE);
         });
 
         delBtn.addActionListener(e -> {
@@ -667,15 +670,21 @@ public class Menu extends JFrame {
                 JOptionPane.showMessageDialog(this, "Pilih data untuk hapus");
                 return;
             }
+            int modelIndex = table.convertRowIndexToModel(row);
+            Laundry selected = app.getOrders().get(modelIndex);
+            if (selected.getStatus() == OrderStatus.SELESAI) {
+                JOptionPane.showMessageDialog(this, "Pesanan yang sudah selesai tidak dapat dihapus", "Info", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
             int confirm = JOptionPane.showConfirmDialog(this, "Yakin hapus data?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
             if (confirm != JOptionPane.YES_OPTION) return;
-            int modelIndex = table.convertRowIndexToModel(row);
             app.getOrders().remove(modelIndex);
             app.persist();
             refreshListTable(listDataModel);
         });
 
         actions.add(editBtn);
+        actions.add(completeBtn);
         actions.add(delBtn);
         root.add(actions, BorderLayout.SOUTH);
 
@@ -838,6 +847,9 @@ public class Menu extends JFrame {
         return order;
     }
 
+    private DefaultTableModel usersModel;
+    private UserCsv usersRepo;
+
     private JPanel createUsersPanel() {
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(new Color(245, 247, 250));
@@ -856,21 +868,560 @@ public class Menu extends JFrame {
 
         root.add(header, BorderLayout.NORTH);
 
-        JPanel center = new JPanel(new GridBagLayout());
-        center.setBackground(new Color(245, 247, 250));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.insets = new Insets(20, 20, 20, 20);
+        String[] cols = {"Username", "Password"};
+        usersModel = new DefaultTableModel(cols, 0) {
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
+        };
+        JTable table = new JTable(usersModel);
+        table.setRowHeight(40);
+        table.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        table.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 14));
+        table.getTableHeader().setBackground(new Color(30, 58, 95));
+        table.getTableHeader().setForeground(Color.WHITE);
+        table.setGridColor(new Color(230, 230, 230));
+        table.setShowGrid(true);
+        table.setIntercellSpacing(new Dimension(0, 0));
 
-        JLabel infoLabel = new JLabel("Fitur Users belum tersedia");
-        infoLabel.setFont(new Font("SansSerif", Font.PLAIN, 16));
-        infoLabel.setForeground(new Color(100, 100, 100));
-        center.add(infoLabel, gbc);
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+        for (int i = 0; i < table.getColumnCount(); i++) {
+            table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+        }
 
-        root.add(center, BorderLayout.CENTER);
+        usersRepo = new UserCsv("src/main/resources/data/users.csv");
+        refreshUsersTable();
+
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(230, 230, 230)),
+            BorderFactory.createEmptyBorder(20, 20, 20, 20)
+        ));
+        scrollPane.setBackground(Color.WHITE);
+        scrollPane.getViewport().setBackground(Color.WHITE);
+        scrollPane.setOpaque(true);
+
+        root.add(scrollPane, BorderLayout.CENTER);
+
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 10));
+        actions.setBackground(Color.WHITE);
+        actions.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
+        
+        JButton editBtn = new JButton("Edit") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bgColor;
+                if (getModel().isPressed()) {
+                    bgColor = new Color(33, 150, 243).darker();
+                } else if (getModel().isRollover()) {
+                    bgColor = new Color(33, 150, 243).brighter();
+                } else {
+                    bgColor = new Color(33, 150, 243);
+                }
+                g2d.setColor(bgColor);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.dispose();
+            }
+        };
+        editBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
+        editBtn.setForeground(Color.WHITE);
+        editBtn.setBorderPainted(false);
+        editBtn.setFocusPainted(false);
+        editBtn.setContentAreaFilled(false);
+        editBtn.setPreferredSize(new Dimension(100, 40));
+        
+        JButton delBtn = new JButton("Hapus") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bgColor;
+                if (getModel().isPressed()) {
+                    bgColor = new Color(244, 67, 54).darker();
+                } else if (getModel().isRollover()) {
+                    bgColor = new Color(244, 67, 54).brighter();
+                } else {
+                    bgColor = new Color(244, 67, 54);
+                }
+                g2d.setColor(bgColor);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.dispose();
+            }
+        };
+        delBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
+        delBtn.setForeground(Color.WHITE);
+        delBtn.setBorderPainted(false);
+        delBtn.setFocusPainted(false);
+        delBtn.setContentAreaFilled(false);
+        delBtn.setPreferredSize(new Dimension(100, 40));
+
+        editBtn.addActionListener(e -> {
+            int row = table.getSelectedRow();
+            if (row < 0) {
+                JOptionPane.showMessageDialog(this, "Pilih data untuk edit");
+                return;
+            }
+            int modelIndex = table.convertRowIndexToModel(row);
+            try {
+                List<User> users = usersRepo.loadAll();
+                User selected = users.get(modelIndex);
+                showEditUserDialog(selected, modelIndex);
+            } catch (Data ex) {
+                JOptionPane.showMessageDialog(this, "Gagal memuat data: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        delBtn.addActionListener(e -> {
+            int row = table.getSelectedRow();
+            if (row < 0) {
+                JOptionPane.showMessageDialog(this, "Pilih data untuk hapus");
+                return;
+            }
+            int confirm = JOptionPane.showConfirmDialog(this, "Yakin hapus user ini?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
+            if (confirm != JOptionPane.YES_OPTION) return;
+            try {
+                int modelIndex = table.convertRowIndexToModel(row);
+                List<User> users = usersRepo.loadAll();
+                users.remove(modelIndex);
+                usersRepo.saveAll(users);
+                refreshUsersTable();
+                JOptionPane.showMessageDialog(this, "User berhasil dihapus", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Data ex) {
+                JOptionPane.showMessageDialog(this, "Gagal menghapus user: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        actions.add(editBtn);
+        actions.add(delBtn);
+        root.add(actions, BorderLayout.SOUTH);
 
         return root;
+    }
+
+    private void refreshUsersTable() {
+        if (usersModel == null || usersRepo == null) return;
+        usersModel.setRowCount(0);
+        try {
+            List<User> users = usersRepo.loadAll();
+            for (User user : users) {
+                usersModel.addRow(new Object[]{
+                    user.getUsername(),
+                    user.getPassword()
+                });
+            }
+        } catch (Data ex) {
+            JOptionPane.showMessageDialog(this, "Gagal memuat data users: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void showEditUserDialog(User user, int index) {
+        JDialog editDialog = new JDialog(this, "Edit User", true);
+        editDialog.setSize(400, 250);
+        editDialog.setLocationRelativeTo(this);
+
+        JPanel rootPanel = new JPanel(new BorderLayout());
+        rootPanel.setBackground(Color.WHITE);
+        rootPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        JPanel form = new JPanel(new GridBagLayout());
+        form.setBackground(Color.WHITE);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.anchor = GridBagConstraints.WEST;
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        form.add(new JLabel("Username:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        JTextField usernameField = new JTextField(user.getUsername()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(getBackground());
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.setColor(new Color(200, 200, 200));
+                g2d.setStroke(new BasicStroke(1.0f));
+                g2d.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
+                g2d.dispose();
+            }
+        };
+        usernameField.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+        usernameField.setOpaque(false);
+        usernameField.setBackground(Color.WHITE);
+        usernameField.setPreferredSize(new Dimension(200, 35));
+        form.add(usernameField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0;
+        form.add(new JLabel("Password:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        JPasswordField passwordField = new JPasswordField(user.getPassword()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(getBackground());
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.setColor(new Color(200, 200, 200));
+                g2d.setStroke(new BasicStroke(1.0f));
+                g2d.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
+                g2d.dispose();
+            }
+        };
+        passwordField.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+        passwordField.setOpaque(false);
+        passwordField.setBackground(Color.WHITE);
+        passwordField.setPreferredSize(new Dimension(200, 35));
+        form.add(passwordField, gbc);
+
+        rootPanel.add(form, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        buttonPanel.setBackground(Color.WHITE);
+        
+        JButton cancelBtn = new JButton("Batal");
+        cancelBtn.setPreferredSize(new Dimension(80, 35));
+        cancelBtn.addActionListener(e -> editDialog.dispose());
+        
+        JButton saveBtn = new JButton("Simpan") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bgColor;
+                if (getModel().isPressed()) {
+                    bgColor = new Color(76, 175, 80).darker();
+                } else if (getModel().isRollover()) {
+                    bgColor = new Color(76, 175, 80).brighter();
+                } else {
+                    bgColor = new Color(76, 175, 80);
+                }
+                g2d.setColor(bgColor);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.dispose();
+            }
+        };
+        saveBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
+        saveBtn.setForeground(Color.WHITE);
+        saveBtn.setBorderPainted(false);
+        saveBtn.setFocusPainted(false);
+        saveBtn.setContentAreaFilled(false);
+        saveBtn.setPreferredSize(new Dimension(80, 35));
+        
+        saveBtn.addActionListener(e -> {
+            String username = usernameField.getText().trim();
+            String password = new String(passwordField.getPassword());
+            
+            if (username.isEmpty() || password.isEmpty()) {
+                JOptionPane.showMessageDialog(editDialog, "Username dan password harus diisi!", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            try {
+                List<User> users = usersRepo.loadAll();
+                for (int i = 0; i < users.size(); i++) {
+                    if (i != index && users.get(i).getUsername().equals(username)) {
+                        JOptionPane.showMessageDialog(editDialog, "Username sudah digunakan!", "Error", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                }
+                users.get(index).setUsername(username);
+                users.get(index).setPassword(password);
+                usersRepo.saveAll(users);
+                refreshUsersTable();
+                editDialog.dispose();
+                JOptionPane.showMessageDialog(this, "User berhasil diupdate", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Data ex) {
+                JOptionPane.showMessageDialog(editDialog, "Gagal menyimpan: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        buttonPanel.add(cancelBtn);
+        buttonPanel.add(saveBtn);
+        rootPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        editDialog.add(rootPanel);
+        editDialog.setVisible(true);
+    }
+
+    private void showEditOrderDialog(Laundry order, int index) {
+        JDialog editDialog = new JDialog(this, "Edit Pesanan", true);
+        editDialog.setSize(500, 450);
+        editDialog.setLocationRelativeTo(this);
+
+        JPanel rootPanel = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                GradientPaint gradient = new GradientPaint(
+                    0, 0, Color.WHITE,
+                    0, getHeight(), new Color(227, 242, 253)
+                );
+                g2d.setPaint(gradient);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+                g2d.dispose();
+            }
+        };
+        rootPanel.setOpaque(true);
+
+        JPanel dialogPanel = new JPanel(new GridBagLayout());
+        dialogPanel.setOpaque(false);
+        dialogPanel.setBorder(BorderFactory.createEmptyBorder(25, 30, 25, 30));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.anchor = GridBagConstraints.WEST;
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        JLabel titleLabel = new JLabel("Edit Pesanan");
+        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 20));
+        titleLabel.setForeground(new Color(33, 150, 243));
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        dialogPanel.add(titleLabel, gbc);
+
+        gbc.gridwidth = 1;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0;
+        dialogPanel.add(new JLabel("Nama:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        JTextField nameField = new JTextField(order.getCustomerName()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(getBackground());
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.setColor(new Color(200, 200, 200));
+                g2d.setStroke(new BasicStroke(1.0f));
+                g2d.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
+                g2d.dispose();
+            }
+        };
+        nameField.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+        nameField.setOpaque(false);
+        nameField.setBackground(Color.WHITE);
+        nameField.setPreferredSize(new Dimension(250, 35));
+        dialogPanel.add(nameField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0;
+        dialogPanel.add(new JLabel("Berat (kg):"), gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        JTextField weightField = new JTextField(String.valueOf(order.getWeightKg())) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(getBackground());
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.setColor(new Color(200, 200, 200));
+                g2d.setStroke(new BasicStroke(1.0f));
+                g2d.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
+                g2d.dispose();
+            }
+        };
+        weightField.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+        weightField.setOpaque(false);
+        weightField.setBackground(Color.WHITE);
+        weightField.setPreferredSize(new Dimension(250, 35));
+        dialogPanel.add(weightField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0;
+        dialogPanel.add(new JLabel("Layanan:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        JComboBox<ServiceType> serviceBox = new JComboBox<>(ServiceType.values());
+        serviceBox.setSelectedItem(order.getServiceType());
+        serviceBox.setPreferredSize(new Dimension(250, 35));
+        dialogPanel.add(serviceBox, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0;
+        dialogPanel.add(new JLabel("Status:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        JComboBox<OrderStatus> statusBox = new JComboBox<>(OrderStatus.values());
+        statusBox.setSelectedItem(order.getStatus());
+        statusBox.setPreferredSize(new Dimension(250, 35));
+        dialogPanel.add(statusBox, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 5;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0;
+        dialogPanel.add(new JLabel("Tanggal (YYYY-MM-DD):"), gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        JTextField dateField = new JTextField(order.getOrderDate().toString()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(getBackground());
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.setColor(new Color(200, 200, 200));
+                g2d.setStroke(new BasicStroke(1.0f));
+                g2d.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
+                g2d.dispose();
+            }
+        };
+        dateField.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+        dateField.setOpaque(false);
+        dateField.setBackground(Color.WHITE);
+        dateField.setPreferredSize(new Dimension(250, 35));
+        dialogPanel.add(dateField, gbc);
+
+        rootPanel.add(dialogPanel, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        buttonPanel.setOpaque(false);
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
+        
+        JButton cancelBtn = new JButton("Batal") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bgColor;
+                if (getModel().isPressed()) {
+                    bgColor = new Color(158, 158, 158).darker();
+                } else if (getModel().isRollover()) {
+                    bgColor = new Color(158, 158, 158).brighter();
+                } else {
+                    bgColor = new Color(158, 158, 158);
+                }
+                g2d.setColor(bgColor);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.dispose();
+            }
+        };
+        cancelBtn.setForeground(Color.WHITE);
+        cancelBtn.setBorderPainted(false);
+        cancelBtn.setFocusPainted(false);
+        cancelBtn.setContentAreaFilled(false);
+        cancelBtn.setPreferredSize(new Dimension(100, 40));
+        cancelBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
+        cancelBtn.addActionListener(e -> editDialog.dispose());
+        
+        JButton saveBtn = new JButton("Simpan") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bgColor;
+                if (getModel().isPressed()) {
+                    bgColor = new Color(76, 175, 80).darker();
+                } else if (getModel().isRollover()) {
+                    bgColor = new Color(76, 175, 80).brighter();
+                } else {
+                    bgColor = new Color(76, 175, 80);
+                }
+                g2d.setColor(bgColor);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+                g2d.dispose();
+            }
+        };
+        saveBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
+        saveBtn.setForeground(Color.WHITE);
+        saveBtn.setBorderPainted(false);
+        saveBtn.setFocusPainted(false);
+        saveBtn.setContentAreaFilled(false);
+        saveBtn.setPreferredSize(new Dimension(100, 40));
+        
+        saveBtn.addActionListener(e -> {
+            if (order.getStatus() == OrderStatus.SELESAI) {
+                JOptionPane.showMessageDialog(editDialog, "Pesanan yang sudah selesai tidak dapat diedit", "Info", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+            String name = nameField.getText().trim();
+            double weight;
+            try {
+                weight = Double.parseDouble(weightField.getText().trim());
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(editDialog, "Berat harus berupa angka desimal", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            ServiceType service = (ServiceType) serviceBox.getSelectedItem();
+            OrderStatus status = (OrderStatus) statusBox.getSelectedItem();
+            LocalDate date;
+            try {
+                date = LocalDate.parse(dateField.getText().trim());
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(editDialog, "Format tanggal harus YYYY-MM-DD", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            try {
+                Laundry updatedOrder = new Laundry(name, service, weight, date, status);
+                app.getService().validateOrder(updatedOrder);
+                order.setCustomerName(name);
+                order.setWeightKg(weight);
+                order.setServiceType(service);
+                order.setStatus(status);
+                order.setOrderDate(date);
+                app.persist();
+                refreshListTable(listDataModel);
+                editDialog.dispose();
+                JOptionPane.showMessageDialog(this, "Pesanan berhasil diupdate", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Validation ex) {
+                JOptionPane.showMessageDialog(editDialog, ex.getMessage(), "Validasi", JOptionPane.WARNING_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(editDialog, "Gagal menyimpan: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        buttonPanel.add(cancelBtn);
+        buttonPanel.add(saveBtn);
+        rootPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        editDialog.add(rootPanel);
+        editDialog.setVisible(true);
     }
 
     private JPanel createReportPanel() {
